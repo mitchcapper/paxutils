@@ -1,3 +1,7 @@
+2004-09-08  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* tests/genfile.c (parse_opt): Allow --length=0
+
 2004-09-07  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* tests: New directory
