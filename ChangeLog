@@ -1,3 +1,11 @@
+2005-01-06  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* m4/rtapelib.m4: New file
+	* m4/system.m4: New file
+	* m4/rmt.m4 (PU_RMT): Check for strerror
+	* m4/DISTFILES: Added new files
+	* rmt/rmt.c (main): Fixed declaration
+
 2004-12-22  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* rmt/rmt.c (main): Reverted changes. setlocale()
