@@ -1,3 +1,8 @@
+2005-02-06  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+        * gnulib.modules: New file. List of required gnulib
+	modules.
+
 2005-02-04  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* rmt/rmt.c: Cleaned up the mess. Fixed error reporting.
