@@ -1,7 +1,12 @@
+2005-02-04  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* rmt/rmt.c: Cleaned up the mess. Fixed error reporting.
+
 2005-02-03  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* tests/genfile.c: New mode `--stat' prints selected
 	fields from struct stat for existing files.
+	Improved help output.
 
 2005-01-06  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
