@@ -1,0 +1,10 @@
+Currently the contents of this repository is used by GNU tar
+and cpio build systems. See files HISTORY and TODO for
+the information about background of GNU paxutils and its future
+plans.
+
+Each subdirectory in the repository contains file DISTFILES that
+lists the files to be exported from this subdirectory to the
+above projects. The file consists of a list of filenames, each
+on a separate line. Empty lines and comments (beginning with #)
+are allowed. Comments must occupy a separate line.
