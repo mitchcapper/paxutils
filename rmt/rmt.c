@@ -271,7 +271,7 @@ Manipulate a tape drive, accepting commands from a remote process.\n\
 }
 
 int
-main (int argc, char *const *argv)
+main (int argc, char **argv)
 {
   char command;
   size_t status;
