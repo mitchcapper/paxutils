@@ -1,6 +1,6 @@
 /* Remote connection server.
 
-   Copyright (C) 1994, 1995, 1996, 1997, 1999, 2000, 2001, 2003, 2004
+   Copyright (C) 1994, 1995, 1996, 1997, 1999, 2000, 2001, 2003, 2004, 2005
    Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify it
@@ -75,25 +75,6 @@ static FILE *debug_file;
 #define	DEBUG2(File, Arg1, Arg2) \
   if (debug_file) fprintf(debug_file, File, Arg1, Arg2)
 
-/* Return an error string, given an error number.  */
-#if HAVE_STRERROR
-# ifndef strerror
-char *strerror ();
-# endif
-#else
-static char *
-private_strerror (int errnum)
-{
-  extern char *sys_errlist[];
-  extern int sys_nerr;
-
-  if (errnum > 0 && errnum <= sys_nerr)
-    return _(sys_errlist[errnum]);
-  return _("Unknown system error");
-}
-# define strerror private_strerror
-#endif
-
 static void
 report_error_message (const char *string)
 {
@@ -126,6 +107,19 @@ get_string (char *string)
 	break;
     }
   string[counter] = '\0';
+}
+
+static long
+get_long (char *string)
+{
+  char *p;
+  long n = strtol (string, &p, 10);
+  if (*p)
+    {
+      report_error_message (N_("Number syntax error"));
+      exit (EXIT_FAILURE);
+    }
+  return n;
 }
 
 static void
@@ -262,13 +256,285 @@ Usage: %s [OPTION]\n\
 Manipulate a tape drive, accepting commands from a remote process.\n\
 \n\
   --version  Output version info.\n\
-  --help  Output this help.\n"),
+  --help     Output this help.\n"),
 	      program_name);
       printf (_("\nReport bugs to <%s>.\n"), PACKAGE_BUGREPORT);
     }
 
   exit (status);
 }
+
+static void
+respond (long status)
+{
+  DEBUG1 ("rmtd: A %ld\n", status);
+
+  sprintf (reply_buffer, "A%ld\n", status);
+  full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
+}
+
+
+
+static void
+open_device (void)
+{
+  char device_string[STRING_SIZE];
+  char oflag_string[STRING_SIZE];
+
+  get_string (device_string);
+  get_string (oflag_string);
+  DEBUG2 ("rmtd: O %s %s\n", device_string, oflag_string);
+
+  if (tape >= 0)
+    close (tape);
+
+  tape = open (device_string, decode_oflag (oflag_string), MODE_RW);
+  if (tape < 0)
+    report_numbered_error (errno);
+  else
+    respond (0);
+}
+
+static void
+close_device (void)
+{
+  char device_string[STRING_SIZE];
+
+  get_string (device_string); /* discard */
+  DEBUG ("rmtd: C\n");
+
+  if (close (tape) < 0)
+    report_numbered_error (errno);
+  else
+    {
+      tape = -1;
+      respond (0);
+    }
+}
+
+static void
+lseek_device (void)
+{
+  char count_string[STRING_SIZE];
+  char position_string[STRING_SIZE];
+  off_t count = 0;
+  int negative;
+  int whence;
+  char *p;
+	    
+  get_string (count_string);
+  get_string (position_string);
+  DEBUG2 ("rmtd: L %s %s\n", count_string, position_string);
+	    
+  /* Parse count_string, taking care to check for overflow.
+     We can't use standard functions,
+     since off_t might be longer than long.  */
+  
+  for (p = count_string;  *p == ' ' || *p == '\t';  p++)
+    ;
+
+  negative = *p == '-';
+  p += negative || *p == '+';
+
+  for (; *p; p++)
+    {
+      int digit = *p - '0';
+      if (9 < (unsigned) digit)
+	{
+	  report_error_message (N_("Seek offset error"));
+	  exit (EXIT_FAILURE);
+	}
+      else
+	{
+	  off_t c10 = 10 * count;
+	  off_t nc = negative ? c10 - digit : c10 + digit;
+	  if (c10 / 10 != count || (negative ? c10 < nc : nc < c10))
+	    {
+	      report_error_message (N_("Seek offset out of range"));
+	      exit (EXIT_FAILURE);
+	    }
+	  count = nc;
+	}
+    }
+
+  switch (get_long (position_string))
+    {
+    case 0:
+      whence = SEEK_SET;
+      break;
+		
+    case 1:
+      whence = SEEK_CUR;
+      break;
+		
+    case 2:
+      whence = SEEK_END;
+      break;
+      
+    default:
+      report_error_message (N_("Seek direction out of range"));
+      exit (EXIT_FAILURE);
+    }
+	    
+  count = lseek (tape, count, whence);
+  if (count < 0)
+    report_numbered_error (errno);
+  else
+    {
+      /* Convert count back to string for reply.
+	 We can't use sprintf, since off_t might be longer
+	 than long.  */
+      p = count_string + sizeof count_string;
+      *--p = '\0';
+      do
+	*--p = '0' + (int) (count % 10);
+      while ((count /= 10) != 0);
+      
+      DEBUG1 ("rmtd: A %s\n", p);
+      
+      sprintf (reply_buffer, "A%s\n", p);
+      full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
+    }
+}
+
+static void
+write_device (void)
+{
+  char count_string[STRING_SIZE];
+  size_t size;
+  size_t counter;
+  size_t status = 0;
+  
+  get_string (count_string);
+  size = get_long (count_string);
+  DEBUG1 ("rmtd: W %s\n", count_string);
+  
+  prepare_input_buffer (STDIN_FILENO, size);
+  for (counter = 0; counter < size; counter += status)
+    {
+      status = safe_read (STDIN_FILENO, &record_buffer[counter],
+			  size - counter);
+      if (status == SAFE_READ_ERROR || status == 0)
+	{
+	  DEBUG (_("rmtd: Premature eof\n"));
+	  
+	  report_error_message (N_("Premature end of file"));
+	  exit (EXIT_FAILURE); /* exit status used to be 2 */
+	}
+    }
+  status = full_write (tape, record_buffer, size);
+  if (status != size)
+    report_numbered_error (errno);
+  else
+    respond (status);
+}
+
+static void
+read_device (void)
+{
+  char count_string[STRING_SIZE];
+  size_t size;
+  size_t status;
+  
+  get_string (count_string);
+  DEBUG1 ("rmtd: R %s\n", count_string);
+  
+  size = get_long (count_string);
+  prepare_input_buffer (-1, size);
+  status = safe_read (tape, record_buffer, size);
+  if (status == SAFE_READ_ERROR)
+    report_numbered_error (errno);
+  else
+    {
+      sprintf (reply_buffer, "A%lu\n", (unsigned long) status);
+      full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
+      full_write (STDOUT_FILENO, record_buffer, status);
+    }
+}
+
+static void
+mtioctop (void)
+{
+  char operation_string[STRING_SIZE];
+  char count_string[STRING_SIZE];
+
+  get_string (operation_string);
+  get_string  (count_string);
+  DEBUG2 ("rmtd: I %s %s\n", operation_string, count_string);
+
+#ifdef MTIOCTOP
+  {
+    struct mtop mtop;
+    const char *p;
+    off_t count = 0;
+    int negative;
+
+    /* Parse count_string, taking care to check for overflow.
+       We can't use standard functions,
+       since off_t might be longer than long.  */
+
+    for (p = count_string;  *p == ' ' || *p == '\t';  p++)
+      ;
+
+    negative = *p == '-';
+    p += negative || *p == '+';
+
+    for (;;)
+      {
+	int digit = *p++ - '0';
+	if (9 < (unsigned) digit)
+	  break;
+	else
+	  {
+	    off_t c10 = 10 * count;
+	    off_t nc = negative ? c10 - digit : c10 + digit;
+	    if (c10 / 10 != count
+		|| (negative ? c10 < nc : nc < c10))
+	      {
+		report_error_message (N_("Seek offset out of range"));
+		exit (EXIT_FAILURE);
+	      }
+	    count = nc;
+	  }
+      }
+
+    mtop.mt_count = count;
+    if (mtop.mt_count != count)
+      {
+	report_error_message (N_("Seek offset out of range"));
+	exit (EXIT_FAILURE);
+      }
+    mtop.mt_op = get_long (operation_string);
+
+    if (ioctl (tape, MTIOCTOP, (char *) &mtop) < 0)
+      {
+	report_numbered_error (errno);
+	return;
+      }
+  }
+#endif
+  respond (0);
+}
+
+static void
+status_device (void)
+{
+  DEBUG ("rmtd: S\n");
+
+#ifdef MTIOCGET
+  {
+    struct mtget operation;
+    
+    if (ioctl (tape, MTIOCGET, (char *) &operation) < 0)
+      report_numbered_error (errno);
+    else
+      {
+	respond (sizeof operation);
+	full_write (STDOUT_FILENO, (char *) &operation, sizeof operation);
+      }
+#endif
+  }
+}  
 
 int
 main (int argc, char **argv)
@@ -322,257 +588,47 @@ see the file named COPYING for details."));
       setbuf (debug_file, 0);
     }
 
-top:
-  errno = 0;
-  status = 0;
-  if (safe_read (STDIN_FILENO, &command, 1) != 1)
-    return EXIT_SUCCESS;
-
-  switch (command)
+  while (1)
     {
-      /* FIXME: Maybe 'H' and 'V' for --help and --version output?  */
+      errno = 0;
+      
+      if (safe_read (STDIN_FILENO, &command, 1) != 1)
+	return EXIT_SUCCESS;
 
-    case 'O':
-      {
-	char device_string[STRING_SIZE];
-	char oflag_string[STRING_SIZE];
-
-	get_string (device_string);
-	get_string (oflag_string);
-	DEBUG2 ("rmtd: O %s %s\n", device_string, oflag_string);
-
-	if (tape >= 0)
-	  close (tape);
-
-	tape = open (device_string, decode_oflag (oflag_string), MODE_RW);
-	if (tape < 0)
-	  goto ioerror;
-	goto respond;
-      }
-
-    case 'C':
-      {
-	char device_string[STRING_SIZE];
-
-	get_string (device_string); /* discard */
-	DEBUG ("rmtd: C\n");
-
-	if (close (tape) < 0)
-	  goto ioerror;
-	tape = -1;
-	goto respond;
-      }
-
-    case 'L':
-      {
-	char count_string[STRING_SIZE];
-	char position_string[STRING_SIZE];
-	off_t count = 0;
-	int negative;
-	int whence;
-	char *p;
-
-	get_string (count_string);
-	get_string (position_string);
-	DEBUG2 ("rmtd: L %s %s\n", count_string, position_string);
-
-	/* Parse count_string, taking care to check for overflow.
-	   We can't use standard functions,
-	   since off_t might be longer than long.  */
-
-	for (p = count_string;  *p == ' ' || *p == '\t';  p++)
-	  continue;
-
-	negative = *p == '-';
-	p += negative || *p == '+';
-
-	for (;;)
-	  {
-	    int digit = *p++ - '0';
-	    if (9 < (unsigned) digit)
-	      break;
-	    else
-	      {
-		off_t c10 = 10 * count;
-		off_t nc = negative ? c10 - digit : c10 + digit;
-		if (c10 / 10 != count || (negative ? c10 < nc : nc < c10))
-		  {
-		    report_error_message (N_("Seek offset out of range"));
-		    return EXIT_FAILURE;
-		  }
-		count = nc;
-	      }
-	  }
-
-	switch (atoi (position_string))
-	  {
-	  case 0: whence = SEEK_SET; break;
-	  case 1: whence = SEEK_CUR; break;
-	  case 2: whence = SEEK_END; break;
-	  default:
-	    report_error_message (N_("Seek direction out of range"));
-	    return EXIT_FAILURE;
-	  }
-	count = lseek (tape, count, whence);
-	if (count < 0)
-	  goto ioerror;
-
-	/* Convert count back to string for reply.
-	   We can't use sprintf, since off_t might be longer than long.  */
-	p = count_string + sizeof count_string;
-	*--p = '\0';
-	do
-	  *--p = '0' + (int) (count % 10);
-	while ((count /= 10) != 0);
-
-	DEBUG1 ("rmtd: A %s\n", p);
-
-	sprintf (reply_buffer, "A%s\n", p);
-	full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
-	goto top;
-      }
-
-    case 'W':
-      {
-	char count_string[STRING_SIZE];
-	size_t size;
-	size_t counter;
-
-	get_string (count_string);
-	size = atol (count_string);
-	DEBUG1 ("rmtd: W %s\n", count_string);
-
-	prepare_input_buffer (STDIN_FILENO, size);
-	for (counter = 0; counter < size; counter += status)
-	  {
-	    status = safe_read (STDIN_FILENO, &record_buffer[counter],
-				size - counter);
-	    if (status == SAFE_READ_ERROR || status == 0)
-	      {
-		DEBUG (_("rmtd: Premature eof\n"));
-
-		report_error_message (N_("Premature end of file"));
-		return EXIT_FAILURE; /* exit status used to be 2 */
-	      }
-	  }
-	status = full_write (tape, record_buffer, size);
-	if (status != size)
-	  goto ioerror;
-	goto respond;
-      }
-
-    case 'R':
-      {
-	char count_string[STRING_SIZE];
-	size_t size;
-
-	get_string (count_string);
-	DEBUG1 ("rmtd: R %s\n", count_string);
-
-	size = atol (count_string);
-	prepare_input_buffer (-1, size);
-	status = safe_read (tape, record_buffer, size);
-	if (status == SAFE_READ_ERROR)
-	  goto ioerror;
-	sprintf (reply_buffer, "A%lu\n", (unsigned long int) status);
-	full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
-	full_write (STDOUT_FILENO, record_buffer, status);
-	goto top;
-      }
-
-    case 'I':
-      {
-	char operation_string[STRING_SIZE];
-	char count_string[STRING_SIZE];
-
-	get_string (operation_string);
-	get_string  (count_string);
-	DEBUG2 ("rmtd: I %s %s\n", operation_string, count_string);
-
-#ifdef MTIOCTOP
+      switch (command)
 	{
-	  struct mtop mtop;
-	  const char *p;
-	  off_t count = 0;
-	  int negative;
+	case 'O':
+	  open_device ();
+	  break;
+	  
+	case 'C':
+	  close_device ();
+	  break;
+	  
+	case 'L':
+	  lseek_device ();
+	  break;
+	  
+	case 'W':
+	  write_device ();
+	  break;
 
-	  /* Parse count_string, taking care to check for overflow.
-	     We can't use standard functions,
-	     since off_t might be longer than long.  */
-
-	  for (p = count_string;  *p == ' ' || *p == '\t';  p++)
-	    continue;
-
-	  negative = *p == '-';
-	  p += negative || *p == '+';
-
-	  for (;;)
-	    {
-	      int digit = *p++ - '0';
-	      if (9 < (unsigned) digit)
-		break;
-	      else
-		{
-		  off_t c10 = 10 * count;
-		  off_t nc = negative ? c10 - digit : c10 + digit;
-		  if (c10 / 10 != count || (negative ? c10 < nc : nc < c10))
-		    {
-		      report_error_message (N_("Seek offset out of range"));
-		      return EXIT_FAILURE;
-		    }
-		  count = nc;
-		}
-	    }
-
-	  mtop.mt_count = count;
-	  if (mtop.mt_count != count)
-	    {
-	      report_error_message (N_("Seek offset out of range"));
-	      return EXIT_FAILURE;
-	    }
-	  mtop.mt_op = atoi (operation_string);
-
-	  if (ioctl (tape, MTIOCTOP, (char *) &mtop) < 0)
-	    goto ioerror;
+	case 'R':
+	  read_device ();
+	  break;
+	  
+	case 'I':
+	  mtioctop ();
+	  break;
+	  
+	case 'S':
+	  status_device ();
+	  break;
+	  
+	default:
+	  DEBUG1 (_("rmtd: Garbage command %c\n"), command);
+	  report_error_message (N_("Garbage command"));
+	  return EXIT_FAILURE;	/* exit status used to be 3 */
 	}
-#endif
-	goto respond;
-      }
-
-    case 'S':			/* status */
-      {
-	DEBUG ("rmtd: S\n");
-
-#ifdef MTIOCGET
-	{
-	  struct mtget operation;
-
-	  if (ioctl (tape, MTIOCGET, (char *) &operation) < 0)
-	    goto ioerror;
-	  status = sizeof operation;
-	  sprintf (reply_buffer, "A%ld\n", (long) status);
-	  full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
-	  full_write (STDOUT_FILENO, (char *) &operation, sizeof operation);
-	}
-#endif
-	goto top;
-      }
-
-    default:
-      DEBUG1 (_("rmtd: Garbage command %c\n"), command);
-
-      report_error_message (N_("Garbage command"));
-      return EXIT_FAILURE;	/* exit status used to be 3 */
     }
-
-respond:
-  DEBUG1 ("rmtd: A %ld\n", (long) status);
-
-  sprintf (reply_buffer, "A%ld\n", (long) status);
-  full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
-  goto top;
-
-ioerror:
-  report_numbered_error (errno);
-  goto top;
 }
