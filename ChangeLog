@@ -1,3 +1,7 @@
+2005-03-21  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* tests/genfile.c (main): Allow --length=0
+
 2005-02-07  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* lib/paxbuf.c: New file
