@@ -413,9 +413,6 @@ main (int argc, char **argv)
     }
   else if (sparse_file)
     generate_sparse_file (argc, argv);
-  else if (file_length == 0)
-    argp_help (&argp, stderr, ARGP_HELP_STD_HELP,
-	       program_invocation_short_name);
   else
     generate_simple_file (argc, argv);
 
