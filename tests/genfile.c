@@ -1,6 +1,7 @@
 /* Generate a file containing some preset patterns.
-
-   Copyright (C) 1995, 1996, 1997, 2001, 2003, 2004 Free Software
+   Print statistics for existing files.
+   
+   Copyright (C) 1995, 1996, 1997, 2001, 2003, 2004, 2005 Free Software
    Foundation, Inc.
 
    François Pinard <pinard@iro.umontreal.ca>, 1995.
@@ -54,15 +55,24 @@ static enum pattern pattern = DEFAULT_PATTERN;
 /* Generate sparse file */
 static int sparse_file; 
 
+/* Print stats */
+static char *do_stat;
+
+#define DEFAULT_STAT_FORMAT \
+  "name,dev,ino,mode,nlink,uid,gid,size,blksize,blocks,atime,mtime,ctime"
+
 /* Size of a block for sparse file */
 size_t block_size = 512;
 
 /* Block buffer for sparse file */
 char *buffer;
 
-static const char *argp_program_version = "genfile (" PACKAGE ") " VERSION;
-static const char *argp_program_bug_address = "<" PACKAGE_BUGREPORT ">";
-static char doc[] = N_("genfile generates data files for GNU paxutils test suite");
+const char *argp_program_version = "genfile (" PACKAGE ") " VERSION;
+const char *argp_program_bug_address = "<" PACKAGE_BUGREPORT ">";
+static char doc[] = N_("genfile manipulates data files for GNU paxutils test suite.\n"
+"When --stat is given the program prints contents of struct stat for each\n"
+"file given in its command line. Otherwise it creates files.\v"
+"Default FORMAT for --stat is: ") DEFAULT_STAT_FORMAT;
 
 static struct argp_option options[] = {
   {"length", 'l', N_("SIZE"), 0,
@@ -76,6 +86,9 @@ static struct argp_option options[] = {
    N_("Size of a block for sparse file"), 0},
   {"sparse", 's', NULL, 0,
    N_("Generate sparse file. The rest of the command line gives the file map"),
+   0 },
+  {"stat", 'S', N_("FORMAT"), OPTION_ARG_OPTIONAL,
+   N_("Print contents of struct stat for each given file. FORMAT is a comma-separated list of struct stat fields to be displayed (you may omit `st_' prefix) and the word `name' for the file name.  Dates are displayed in UTC as UNIX timestamps, unless suffixed with `H' (for `human-readable') in which case usual `tar tv' output format is used."),
    0 },
   { NULL, }
 };
@@ -159,6 +172,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case 's':
       sparse_file = 1;
       break; 
+
+    case 'S':
+      do_stat = arg ? arg : DEFAULT_STAT_FORMAT;
+      break;
       
     default:
       return ARGP_ERR_UNKNOWN;
@@ -176,6 +193,7 @@ static struct argp argp = {
   NULL
 };
 
+
 static void
 generate_simple_file (int argc, char **argv)
 {
@@ -274,6 +292,75 @@ generate_sparse_file (int argc, char **argv)
   close (fd);
 }
 
+void
+print_time (time_t t)
+{
+  char buf[20]; /* ccyy-mm-dd HH:MM:SS\0 */
+  strftime (buf, sizeof buf, "%Y-%m-%d %H:%M:%S", gmtime (&t));
+  printf ("%s ", buf);
+}
+	    
+void
+print_stat (const char *name)
+{
+  char *fmt, *p;
+  struct stat st;
+
+  if (stat (name, &st))
+    {
+      perror (name);
+      return;
+    }
+
+  fmt = strdup (do_stat);
+  for (p = strtok (fmt, ","); p; p = strtok (NULL, ","))
+    {
+      if (memcmp (p, "st_", 3) == 0)
+	p += 3;
+      if (strcmp (p, "name") == 0)
+	printf ("%s", name);
+      else if (strcmp (p, "dev") == 0)
+	printf ("%lu", (unsigned long) st.st_dev);
+      else if (strcmp (p, "ino") == 0)
+	printf ("%lu", (unsigned long) st.st_ino);
+      else if (strcmp (p, "mode") == 0)
+	printf ("%0o", st.st_mode);
+      else if (strcmp (p, "nlink") == 0)
+	printf ("%lu", (unsigned long) st.st_nlink);
+      else if (strcmp (p, "uid") == 0)
+	printf ("%ld", (long unsigned) st.st_uid);
+      else if (strcmp (p, "gid") == 0)
+	printf ("%lu", (unsigned long) st.st_gid);
+      else if (strcmp (p, "size") == 0)
+	printf ("%lu", (unsigned long) st.st_size);
+      else if (strcmp (p, "blksize") == 0)
+	printf ("%lu", (unsigned long) st.st_blksize);
+      else if (strcmp (p, "blocks") == 0)
+	printf ("%lu", (unsigned long) st.st_blocks);
+      else if (strcmp (p, "atime") == 0)
+	printf ("%lu", (unsigned long) st.st_atime);
+      else if (strcmp (p, "atimeH") == 0)
+	print_time (st.st_atime);
+      else if (strcmp (p, "mtime") == 0)
+	printf ("%lu", (unsigned long) st.st_mtime);
+      else if (strcmp (p, "mtimeH") == 0)
+	print_time (st.st_mtime);
+      else if (strcmp (p, "ctime") == 0)
+	printf ("%lu", (unsigned long) st.st_ctime);
+      else if (strcmp (p, "ctimeH") == 0)
+	print_time (st.st_ctime);
+      else
+	{
+	  printf ("\n");
+	  fprintf (stderr, _("%s: Unknown field `%s'\n"),
+		   program_invocation_short_name, p);
+	  exit (EXIT_FAILURE);
+	}
+      printf (" ");
+    }
+  printf ("\n");
+  free (fmt);
+}
 
 int
 main (int argc, char **argv)
@@ -290,10 +377,24 @@ main (int argc, char **argv)
 
   argc -= index;
   argv += index;
-  
-  /* Generate file.  */
-  if (sparse_file)
+
+  if (do_stat)
+    {
+      if (argc == 0)
+	{
+	  fprintf (stderr, "%s: --stat requires file names\n",
+		   program_invocation_short_name);
+	  exit (1);
+	}
+
+      while (argc--)
+	print_stat (*argv++);
+    }
+  else if (sparse_file)
     generate_sparse_file (argc, argv);
+  else if (file_length == 0)
+    argp_help (&argp, stderr, ARGP_HELP_STD_HELP,
+	       program_invocation_short_name);
   else
     generate_simple_file (argc, argv);
 
