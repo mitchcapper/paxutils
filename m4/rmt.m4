@@ -1,5 +1,6 @@
 
 AC_DEFUN([PU_RMT],[
+  AC_CHECK_FUNCS_ONCE([strerror])
   enable_rmt() {
     if test $ac_cv_header_sys_mtio_h = yes; then
       AC_CACHE_CHECK(for remote tape header files, pu_cv_header_rmt,
