@@ -5,7 +5,7 @@
    Foundation, Inc.
 
    François Pinard <pinard@iro.umontreal.ca>, 1995.
-   Sergey Poznyakoff <gray@mirddin.farlep.net>, 2004.
+   Sergey Poznyakoff <gray@mirddin.farlep.net>, 2004, 2005.
    
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,8 +70,16 @@ char *buffer;
 const char *argp_program_version = "genfile (" PACKAGE ") " VERSION;
 const char *argp_program_bug_address = "<" PACKAGE_BUGREPORT ">";
 static char doc[] = N_("genfile manipulates data files for GNU paxutils test suite.\n"
-"When --stat is given the program prints contents of struct stat for each\n"
-"file given in its command line. Otherwise it creates files.\v"
+"\n"
+"Modes:\n\n"
+"1. Create plain file:\n\n"		       
+"  genfile [--file=NAME] [--pattern=PAT] --length=LENGTH\n\n"
+"2. Create sparse file:\n\n"
+"  genfile --sparse --file=NAME [--block-size=N] \\\n"
+"          DISP LETTERS [DISP LETTERS...][DISP]]\n\n"
+"3. Print contents of struct stat for each FILE:\n\n"
+"  genfile --stat[=FORMAT] FILE [FILE...]\n\n"
+"OPTIONS are:\n\v"
 "Default FORMAT for --stat is: ") DEFAULT_STAT_FORMAT;
 
 static struct argp_option options[] = {
@@ -85,10 +93,23 @@ static struct argp_option options[] = {
   {"block-size", 'b', N_("SIZE"), 0,
    N_("Size of a block for sparse file"), 0},
   {"sparse", 's', NULL, 0,
-   N_("Generate sparse file. The rest of the command line gives the file map"),
+   N_("Generate sparse file. Rest of the command line gives the file map. "
+      "It consists of [DISP LETTERS] pairs, each pair describing file "
+      "fragment. DISP sets displacement of the next data fragment from the "
+      "end of the preceeding one, LETTERS is a string of letters for filling "
+      "the fragment. For each letter from LETTERS genfile creates a block of "
+      "block-size bytes (see --block-size), filled with that letter and "
+      "writes it to the file. If the last argument consists of DISP only, "
+      "genfile creates a hole at the end of the file, ending on this "
+      "displacement."),
    0 },
   {"stat", 'S', N_("FORMAT"), OPTION_ARG_OPTIONAL,
-   N_("Print contents of struct stat for each given file. FORMAT is a comma-separated list of struct stat fields to be displayed (you may omit `st_' prefix) and the word `name' for the file name.  Dates are displayed in UTC as UNIX timestamps, unless suffixed with `H' (for `human-readable') in which case usual `tar tv' output format is used."),
+   N_("Print contents of struct stat for each given file. "
+      "FORMAT is a comma-separated list of struct stat fields to be "
+      "displayed (you may omit `st_' prefix) and the word `name' for the "
+      "file name.  Dates are displayed in UTC as UNIX timestamps, unless "
+      "suffixed with `H' (for `human-readable') in which case usual "
+      "`tar tv' output format is used."),
    0 },
   { NULL, }
 };
@@ -186,7 +207,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
 static struct argp argp = {
   options,
   parse_opt,
-  N_("[disp letters [disp letters...] [disp]...]"),
+  N_("[ARGS...]"),
   doc,
   NULL,
   NULL,
