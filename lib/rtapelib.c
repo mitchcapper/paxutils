@@ -1,11 +1,11 @@
 /* Functions for communicating with a remote tape drive.
 
-   Copyright (C) 1988, 1992, 1994, 1996, 1997, 1999, 2000, 2001, 2004,
-   2005, 2006, 2007 Free Software Foundation, Inc.
+   Copyright 1988, 1992, 1994, 1996, 1997, 1999, 2000, 2001, 2004 Free
+   Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation; either version 2, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 /* The man page rmt(8) for /etc/rmt documents the remote mag tape protocol
    which rdump and rrestore use.  Unfortunately, the man page is *WRONG*.
@@ -33,8 +33,6 @@
    code, courtesy of Dan Kegel.  */
 
 #include "system.h"
-#include "system-ioctl.h"
-
 #include <safe-read.h>
 #include <full-write.h>
 
@@ -60,7 +58,7 @@
 #endif
 
 #include <rmt.h>
-#include <rmt-command.h>
+#include <localedir.h>
 
 /* Exit status if exec errors.  */
 #define EXIT_ON_EXEC_ERROR 128
@@ -342,7 +340,9 @@ encode_oflag (char *buf, int oflag)
 #ifdef O_NOCTTY
   if (oflag & O_NOCTTY) strcat (buf, "|O_NOCTTY");
 #endif
+#ifdef O_NONBLOCK
   if (oflag & O_NONBLOCK) strcat (buf, "|O_NONBLOCK");
+#endif
 #ifdef O_RSYNC
   if (oflag & O_RSYNC) strcat (buf, "|O_RSYNC");
 #endif
@@ -358,7 +358,7 @@ encode_oflag (char *buf, int oflag)
    remote pipe number plus BIAS.  REMOTE_SHELL may be overridden.  On
    error, return -1.  */
 int
-rmt_open__ (const char *file_name, int open_mode, int bias,
+rmt_open__ (const char *file_name, int open_mode, int bias, 
             const char *remote_shell)
 {
   int remote_pipe_number;	/* pseudo, biased file descriptor */
@@ -461,7 +461,7 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 	return -1;
 #endif
       }
-    remote_shell_basename = last_component (remote_shell);
+    remote_shell_basename = base_name (remote_shell);
 
     /* Set up the pipes for the `rsh' command, and fork.  */
 
