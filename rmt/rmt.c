@@ -281,9 +281,12 @@ main (int argc, char *const *argv)
      tar, on messages found within error packets.  */
 
   program_name = argv[0];
+
+#ifdef ENABLE_NLS
   setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
+#endif
 
   switch (getopt_long (argc, argv, "", long_opts, NULL))
     {
