@@ -1,3 +1,8 @@
+2005-02-03  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* tests/genfile.c: New mode `--stat' prints selected
+	fields from struct stat for existing files.
+
 2005-01-06  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* m4/rtapelib.m4: New file
