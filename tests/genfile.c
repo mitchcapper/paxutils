@@ -145,7 +145,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
       
     case 'l':
-      file_length = get_size (arg, 0);
+      file_length = get_size (arg, 1);
       break;
 	  
     case 'p':
