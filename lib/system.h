@@ -282,6 +282,9 @@ extern int errno;
 
 #if MAJOR_IN_MKDEV
 # include <sys/mkdev.h>
+# if !defined(makedev) && defined(mkdev)
+#  define makedev(a,b) mkdev((a),(b))
+# endif
 # define GOT_MAJOR
 #endif
 
