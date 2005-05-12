@@ -1,3 +1,16 @@
+2005-05-12  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* lib/system.h: If mkdev is defined, use it as makedev. Proposed
+	by Todd Vierling.
+	* rmt/rmt.c (main): Remove unused variable.
+	* tests/DISTFILES: Add new files
+	* tests/argcv.c: New file
+	* tests/argcv.h: New file
+	* tests/genfile.c: Major rewrite. Add new operation mode: --run.
+	* doc: New directory
+	* doc/DISTFILES: New file.
+	* doc/genfile.texi: New file.
+
 2005-03-21  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* tests/genfile.c (main): Allow --length=0
