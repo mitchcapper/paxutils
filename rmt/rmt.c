@@ -540,7 +540,6 @@ int
 main (int argc, char **argv)
 {
   char command;
-  size_t status;
 
   /* FIXME: Localization is meaningless, unless --help and --version are
      locally used.  Localization would be best accomplished by the calling
