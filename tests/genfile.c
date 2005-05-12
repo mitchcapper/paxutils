@@ -26,12 +26,23 @@
 #include <stdarg.h>
 #include <argmatch.h>
 #include <argp.h>
+#include <argcv.h>
 
 #ifndef EXIT_SUCCESS
 # define EXIT_SUCCESS 0
 #endif
 #ifndef EXIT_FAILURE
 # define EXIT_FAILURE 1
+#endif
+
+#if HAVE_UTIME_H
+# include <utime.h>
+#else
+struct utimbuf
+  {
+    long actime;
+    long modtime;
+  };
 #endif
 
 enum pattern
@@ -52,14 +63,24 @@ static int file_length = 0;
 /* Pattern to generate.  */
 static enum pattern pattern = DEFAULT_PATTERN;
 
-/* Generate sparse file */
-static int sparse_file; 
+/* Next checkpoint number */
+size_t checkpoint; 
 
-/* Print stats */
-static char *do_stat;
+enum genfile_mode
+  {
+    mode_generate,
+    mode_sparse,
+    mode_stat,
+    mode_exec
+  };
+
+enum genfile_mode mode = mode_generate;
 
 #define DEFAULT_STAT_FORMAT \
   "name,dev,ino,mode,nlink,uid,gid,size,blksize,blocks,atime,mtime,ctime"
+
+/* Format for --stat option */
+static char *stat_format = DEFAULT_STAT_FORMAT;
 
 /* Size of a block for sparse file */
 size_t block_size = 512;
@@ -67,68 +88,95 @@ size_t block_size = 512;
 /* Block buffer for sparse file */
 char *buffer;
 
+/* Number of arguments and argument vector for mode == mode_exec */
+int exec_argc;
+char **exec_argv;
+
+/* Time for --touch option */
+struct timespec touch_time;
+
+/* Verbose mode */
+int verbose;
+
 const char *argp_program_version = "genfile (" PACKAGE ") " VERSION;
 const char *argp_program_bug_address = "<" PACKAGE_BUGREPORT ">";
 static char doc[] = N_("genfile manipulates data files for GNU paxutils test suite.\n"
-"\n"
-"Modes:\n\n"
-"1. Create plain file:\n\n"		       
-"  genfile [--file=NAME] [--pattern=PAT] --length=LENGTH\n\n"
-"2. Create sparse file:\n\n"
-"  genfile --sparse --file=NAME [--block-size=N] \\\n"
-"          DISP LETTERS [DISP LETTERS...][DISP]]\n\n"
-"3. Print contents of struct stat for each FILE:\n\n"
-"  genfile --stat[=FORMAT] FILE [FILE...]\n\n"
-"OPTIONS are:\n\v"
-"Default FORMAT for --stat is: ") DEFAULT_STAT_FORMAT;
+"OPTIONS are:\n");
+
+#define OPT_CHECKPOINT 256
+#define OPT_TOUCH      257
+#define OPT_APPEND     258
+#define OPT_TRUNCATE   259
+#define OPT_EXEC       260
+#define OPT_DATE       261
+#define OPT_VERBOSE    262
 
 static struct argp_option options[] = {
+#define GRP 0  
+  {NULL, 0, NULL, 0,
+   N_("File creation options:"), GRP},
   {"length", 'l', N_("SIZE"), 0,
-   N_("Create file of the given SIZE"), 0 },
+   N_("Create file of the given SIZE"), GRP+1 },
   {"file", 'f', N_("NAME"), 0,
-   N_("Write to file NAME, instead of standard output"), 0},
+   N_("Write to file NAME, instead of standard output"), GRP+1},
   {"pattern", 'p', N_("PATTERN"), 0,
    N_("Fill the file with the given PATTERN. PATTERN is 'default' or 'zeros'"),
-   0 },
+   GRP+1 },
   {"block-size", 'b', N_("SIZE"), 0,
-   N_("Size of a block for sparse file"), 0},
+   N_("Size of a block for sparse file"), GRP+1},
   {"sparse", 's', NULL, 0,
-   N_("Generate sparse file. Rest of the command line gives the file map. "
-      "It consists of [DISP LETTERS] pairs, each pair describing file "
-      "fragment. DISP sets displacement of the next data fragment from the "
-      "end of the preceeding one, LETTERS is a string of letters for filling "
-      "the fragment. For each letter from LETTERS genfile creates a block of "
-      "block-size bytes (see --block-size), filled with that letter and "
-      "writes it to the file. If the last argument consists of DISP only, "
-      "genfile creates a hole at the end of the file, ending on this "
-      "displacement."),
-   0 },
+   N_("Generate sparse file. Rest of the command line gives the file map."),
+   GRP+1 },
+#undef GRP
+#define GRP 10  
+  {NULL, 0, NULL, 0,
+   N_("File statistics options:"), GRP},
+  
   {"stat", 'S', N_("FORMAT"), OPTION_ARG_OPTIONAL,
-   N_("Print contents of struct stat for each given file. "
-      "FORMAT is a comma-separated list of struct stat fields to be "
-      "displayed (you may omit `st_' prefix) and the word `name' for the "
-      "file name.  Dates are displayed in UTC as UNIX timestamps, unless "
-      "suffixed with `H' (for `human-readable') in which case usual "
-      "`tar tv' output format is used."),
-   0 },
+   N_("Print contents of struct stat for each given file. Default FORMAT is: ")
+   DEFAULT_STAT_FORMAT,
+   GRP+1 },
+#undef GRP
+#define GRP 20  
+  {NULL, 0, NULL, 0,
+   N_("Synchronous execution options:"), GRP},
+  
+  {"run", 'r', N_("COMMAND"), 0,
+   N_("Execute given COMMAND. Useful with --checkpoint and one of --cut, --append, --touch"),
+   GRP+1 },
+  {"checkpoint", OPT_CHECKPOINT, N_("NUMBER"), 0,
+   N_("Perform given action (see below) upon reaching checkpoint NUMBER"),
+   GRP+1 },
+  {"date", OPT_DATE, N_("STRING"), 0,
+   N_("Set date for next --touch option"),
+   GRP+1 },
+  {"verbose", OPT_VERBOSE, NULL, 0,
+   N_("Display executed checkpoints and exit status of COMMAND"),
+   GRP+1 },
+#undef GRP
+#define GRP 30
+  {NULL, 0, NULL, 0,
+   N_("Synchronous execution actions. These are executed when checkpoint number given by --checkpoint option is reached."), GRP},
+  
+  {"cut", OPT_TRUNCATE, N_("FILE"), 0,
+   N_("Truncate FILE to the size specified by previous --length option (or 0, if it is not given)"),
+   GRP+1 },
+  {"truncate", 0, NULL, OPTION_ALIAS, NULL, GRP+1 },
+  {"append", OPT_APPEND, N_("FILE"), 0,
+   N_("Append SIZE bytes to FILE. SIZE is given by previous --length option."),
+   GRP+1 },
+  {"touch", OPT_TOUCH, N_("FILE"), 0,
+   N_("Update the access and modification times of FILE"),
+   GRP+1 },
+  {"exec", OPT_EXEC, N_("COMMAND"), 0,
+   N_("Execute COMMAND"),
+   GRP+1 },
+#undef GRP  
   { NULL, }
 };
 
 static char const * const pattern_args[] = { "default", "zeros", 0 };
 static enum pattern const pattern_types[] = {DEFAULT_PATTERN, ZEROS_PATTERN};
-
-static void
-die (char const *fmt, ...)
-{
-  va_list ap;
-
-  fprintf (stderr, "%s: ", program_name);
-  va_start (ap, fmt);
-  vfprintf (stderr, fmt, ap);
-  va_end (ap);
-  fprintf (stderr, "\n");
-  exit (EXIT_FAILURE);
-}
 
 static int
 xlat_suffix (off_t *vp, char *p)
@@ -164,10 +212,36 @@ get_size (const char *str, int allow_zero)
   
   n = strtoul (str, &p, 0);
   if (n < 0 || (!allow_zero && n == 0) || (*p && xlat_suffix (&n, p)))
-    die (_("Invalid size: %s"), str);
+    error (EXIT_FAILURE, 0, _("Invalid size: %s"), str);
   return n;
 }
 
+struct action
+{
+  struct action *next;
+  size_t checkpoint;
+  int action;
+  char *name;
+  size_t size;
+  enum pattern pattern;
+  struct timespec ts;
+};
+
+static struct action *action_list;
+
+int
+reg_action (int action, char *arg)
+{
+  struct action *act = xmalloc (sizeof (*act));
+  act->checkpoint = checkpoint;
+  act->action = action;
+  act->pattern = pattern;
+  act->ts = touch_time;
+  act->size = file_length;
+  act->name = arg;
+  act->next = action_list;
+  action_list = act;
+}
 
 static error_t
 parse_opt (int key, char *arg, struct argp_state *state)
@@ -191,11 +265,44 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
       
     case 's':
-      sparse_file = 1;
+      mode = mode_sparse;
       break; 
 
     case 'S':
-      do_stat = arg ? arg : DEFAULT_STAT_FORMAT;
+      mode = mode_stat;
+      if (arg)
+	stat_format = arg;
+      break;
+
+    case 'r':
+      mode = mode_exec;
+      argcv_get (arg, "", NULL, &exec_argc, &exec_argv);
+      break;
+      
+    case OPT_CHECKPOINT:
+      {
+	char *p;
+	
+	checkpoint = strtoul (arg, &p, 0);
+	if (*p)
+	  argp_error (state, _("Error parsing number near `%s'"), p);
+      }
+      break;
+
+    case OPT_DATE:
+      if (!get_date (&touch_time, arg, NULL))
+	argp_error (state, _("Unknown date format"));
+      break;
+      
+    case OPT_APPEND:
+    case OPT_TRUNCATE:
+    case OPT_TOUCH:
+    case OPT_EXEC:
+      reg_action (key, arg);
+      break;
+
+    case OPT_VERBOSE:
+      verbose++;
       break;
       
     default:
@@ -215,6 +322,26 @@ static struct argp argp = {
 };
 
 
+void
+fill (FILE *fp, size_t length, enum pattern pattern)
+{
+  size_t i;
+  
+  switch (pattern)
+    {
+    case DEFAULT_PATTERN:
+      for (i = 0; i < length; i++)
+	fputc (i & 255, fp);
+      break;
+      
+    case ZEROS_PATTERN:
+      for (i = 0; i < length; i++)
+	fputc (0, fp);
+      break;
+    }
+}
+
+/* Generate Mode: usual files */
 static void
 generate_simple_file (int argc, char **argv)
 {
@@ -222,42 +349,30 @@ generate_simple_file (int argc, char **argv)
   FILE *fp;
 
   if (argc)
-    die (_("too many arguments"));
+    error (EXIT_FAILURE, 0, _("too many arguments"));
   
   if (file_name)
     {
       fp = fopen (file_name, "w");
       if (!fp)
-	die (_("cannot open `%s'"), file_name);	
+	error (EXIT_FAILURE, 0, _("cannot open `%s'"), file_name);	
     }
   else
     fp = stdout;
-  
-  switch (pattern)
-    {
-    case DEFAULT_PATTERN:
-      for (i = 0; i < file_length; i++)
-	fputc (i & 255, fp);
-      break;
 
-    case ZEROS_PATTERN:
-      for (i = 0; i < file_length; i++)
-	fputc (0, fp);
-      break;
-    }
+  fill (fp, file_length, pattern);
+  
   fclose (fp);
 }
 
 
+/* Generate Mode: sparse files */
 
 static void
 mkhole (int fd, off_t displ)
 {
   if (lseek (fd, displ, SEEK_CUR) == -1)
-    {
-      perror ("lseek");
-      exit (EXIT_FAILURE);
-    }
+    error (EXIT_FAILURE, errno, "lseek");
   ftruncate (fd, lseek (fd, 0, SEEK_CUR));
 }
 
@@ -268,16 +383,10 @@ mksparse (int fd, off_t displ, char *marks)
     {
       memset (buffer, *marks, block_size);
       if (write (fd, buffer, block_size) != block_size)
-	{
-	  perror ("write");
-	  exit (EXIT_FAILURE);
-	}
+	error (EXIT_FAILURE, errno, "write");
 
       if (lseek (fd, displ, SEEK_CUR) == -1)
-	{
-	  perror ("lseek");
-	  exit (EXIT_FAILURE);
-	}
+	error (EXIT_FAILURE, errno, "lseek");
     }
 }
 
@@ -288,14 +397,13 @@ generate_sparse_file (int argc, char **argv)
   int fd;
 
   if (!file_name)
-    die (_("cannot generate sparse files on standard output, use --file option"));
+    error (EXIT_FAILURE, 0,
+	   _("cannot generate sparse files on standard output, use --file option"));
   fd = open (file_name, O_CREAT|O_TRUNC|O_RDWR, 0644);
   if (fd < 0)
-    die (_("cannot open `%s'"), file_name);
+    error (EXIT_FAILURE, 0, _("cannot open `%s'"), file_name);
 
-  buffer = malloc (block_size);
-  if (!buffer)
-    die (_("Not enough memory"));
+  buffer = xmalloc (block_size);
 
   for (i = 0; i < argc; i += 2)
     {
@@ -313,6 +421,9 @@ generate_sparse_file (int argc, char **argv)
   close (fd);
 }
 
+
+/* Status Mode */
+
 void
 print_time (time_t t)
 {
@@ -329,11 +440,11 @@ print_stat (const char *name)
 
   if (stat (name, &st))
     {
-      perror (name);
+      error (0, errno, _("stat(%s) failed"), name);
       return;
     }
 
-  fmt = strdup (do_stat);
+  fmt = strdup (stat_format);
   for (p = strtok (fmt, ","); p; p = strtok (NULL, ","))
     {
       if (memcmp (p, "st_", 3) == 0)
@@ -373,14 +484,208 @@ print_stat (const char *name)
       else
 	{
 	  printf ("\n");
-	  fprintf (stderr, _("%s: Unknown field `%s'\n"),
-		   program_invocation_short_name, p);
-	  exit (EXIT_FAILURE);
+	  error (EXIT_FAILURE, 0, _("Unknown field `%s'"), p);
 	}
       printf (" ");
     }
   printf ("\n");
   free (fmt);
+}
+
+
+/* Exec Mode */
+
+void
+exec_checkpoint (struct action *p)
+{
+  if (verbose)
+    printf ("processing checkpoint %lu\n", (unsigned long) p->checkpoint);
+  switch (p->action)
+    {
+    case OPT_TOUCH:
+      {
+	struct utimbuf u;
+	
+	u.actime = u.modtime = p->ts.tv_sec;
+	utime (p->name, &u);
+      }
+      break;
+
+    case OPT_APPEND:
+      {
+	FILE *fp = fopen (p->name, "a");
+	if (!fp)
+	  {
+	    error (0, errno, _("cannot open `%s'"),
+		   p->name, strerror (errno));
+	    break;
+	  }
+	
+	fill (fp, p->size, p->pattern);
+	fclose (fp);
+      }
+      break;
+	      
+    case OPT_TRUNCATE:
+      {
+	int fd = open (p->name, O_RDWR);
+	if (fd == -1)
+	  {
+	    error (0, errno, _("cannot open `%s'"),
+		   p->name, strerror (errno));
+	    break;
+	  }
+	ftruncate (fd, p->size);
+	close (fd);
+      }
+      break;
+      
+    case OPT_EXEC:
+      system (p->name);
+      break;
+      
+    default:
+      abort ();
+    }
+}     
+
+void
+process_checkpoint (size_t n)
+{
+  struct action *p, *prev = NULL;
+
+  for (p = action_list; p; )
+    {
+      struct action *next = p->next;
+
+      if (p->checkpoint <= n)
+	{
+	  exec_checkpoint (p);
+	  /* Remove the item from the list */
+	  if (prev)
+	    prev->next = next;
+	  else
+	    action_list = next;
+	  free (p);
+	}
+      else
+	prev = p;
+      
+      p = next;
+    }
+}
+
+static int child_exited = 0;
+
+RETSIGTYPE
+sig_child (int sig)
+{
+  child_exited = 1;
+}
+
+#define CHECKPOINT_TEXT "Write checkpoint"
+
+void
+exec_command ()
+{
+  int i, status;
+  pid_t pid;
+  int fd[2];
+  char *p;
+  FILE *fp;
+  char buf[128];
+  
+  /* Insert --checkpoint option.
+     FIXME: This assumes that exec_argv does not use traditional tar options
+     (without dash) */
+  exec_argc++;
+  exec_argv = xrealloc (exec_argv, exec_argc * sizeof (*exec_argv));
+  memmove (exec_argv+2, exec_argv+1, (exec_argc-1)*sizeof (*exec_argv));
+  exec_argv[1] = "--checkpoint";
+
+  signal (SIGCHLD, sig_child);
+  
+  pipe (fd);
+  
+  pid = fork ();
+  if (pid == -1)
+    error (EXIT_FAILURE, errno, "fork");
+
+  if (pid == 0)
+    {
+      /* Child */
+
+      /* Pipe stderr */
+      if (fd[1] != 2)
+	dup2 (fd[1], 2);
+      close (fd[0]);
+
+      /* Make sure POSIX locale is used */
+      setenv ("LC_ALL", "POSIX", 1);
+
+      execvp (exec_argv[0], exec_argv);
+      error (EXIT_FAILURE, errno, "execvp");
+    }
+
+  /* Master */
+  close (fd[1]);
+  fp = fdopen (fd[0], "r");
+  if (fp == NULL)
+    error (EXIT_FAILURE, errno, "fdopen");
+
+  while ((p = fgets (buf, sizeof buf, fp)))
+    {
+      while (*p && !isspace (*p) && *p != ':')
+	p++;
+      
+      if (*p == ':')
+	{
+	  for (p++; *p && isspace (*p); p++)
+	    ;
+
+	  if (*p
+	      && memcmp (p, CHECKPOINT_TEXT, sizeof CHECKPOINT_TEXT - 1) == 0)
+	    {
+	      char *end;
+	      size_t n = strtoul (p + sizeof CHECKPOINT_TEXT - 1, &end, 10);
+	      if (!(*end && !isspace (*end)))
+		{
+		  process_checkpoint (n);
+		  continue;
+		}
+	    }
+	}
+      fprintf (stderr, "%s", buf);
+    }
+
+  /* Collect exit status */
+  waitpid (pid, &status, 0);
+
+  if (verbose)
+    {
+      if (WIFEXITED (status))
+	{
+	  if (WEXITSTATUS (status) == 0)
+	    printf (_("Command exited successfully\n"));
+	  else
+	    printf (_("Command failed with status %d\n"),
+		    WEXITSTATUS (status));
+	}
+      else if (WIFSIGNALED (status))
+	printf (_("Command terminated on signal %d\n"), WTERMSIG (status));
+      else if (WIFSTOPPED (status))
+	printf (_("Command stopped on signal %d\n"), WSTOPSIG (status));
+#ifdef WCOREDUMP
+      else if (WCOREDUMP (status))
+	printf (_("Command dumped core\n"));
+#endif
+      else
+	printf(_("Command terminated\n"));
+    }
+
+  if (WIFEXITED (status))
+    exit (WEXITSTATUS (status));
+  exit (EXIT_FAILURE);
 }
 
 int
@@ -390,7 +695,8 @@ main (int argc, char **argv)
 
   program_name = argv[0];
   setlocale (LC_ALL, "");
-
+  get_date (&touch_time, "now", NULL);
+  
   /* Decode command options.  */
 
   if (argp_parse (&argp, argc, argv, 0, &index, NULL))
@@ -399,22 +705,31 @@ main (int argc, char **argv)
   argc -= index;
   argv += index;
 
-  if (do_stat)
+  switch (mode)
     {
+    case mode_stat:
       if (argc == 0)
-	{
-	  fprintf (stderr, "%s: --stat requires file names\n",
-		   program_invocation_short_name);
-	  exit (1);
-	}
+	error (EXIT_FAILURE, 0, "--stat requires file names");
 
       while (argc--)
 	print_stat (*argv++);
-    }
-  else if (sparse_file)
-    generate_sparse_file (argc, argv);
-  else
-    generate_simple_file (argc, argv);
+      break;
 
+    case mode_sparse:
+      generate_sparse_file (argc, argv);
+      break;
+
+    case mode_generate:
+      generate_simple_file (argc, argv);
+      break;
+      
+    case mode_exec:
+      exec_command ();
+      break;
+      
+    default:
+      /* Just in case */
+      abort ();
+    }
   exit (EXIT_SUCCESS);
 }
