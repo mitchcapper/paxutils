@@ -1,0 +1,17 @@
+# Makefile variables for paxutils PO directory 
+
+# Usually the message domain is the same as the package name.
+DOMAIN = $(PACKAGE)
+
+# These two variables depend on the location of this directory.
+subdir = po
+top_builddir = ..
+
+# These options get passed to xgettext.
+XGETTEXT_OPTIONS = --keyword=_ --keyword=N_
+
+COPYRIGHT_HOLDER = Free Software Foundation, Inc.
+
+MSGID_BUGS_ADDRESS = bug-paxutils@gnu.org
+
+EXTRA_LOCALE_CATEGORIES =
