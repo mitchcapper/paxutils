@@ -1,3 +1,49 @@
+2005-05-14  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* AUTHORS: New file
+	* COPYING: New file
+	* NEWS: New file
+	* THANKS: New file
+	* README-alpha: New file
+	* README: Updated
+	* Makefile.am: New file
+	* configure.ac: New file
+	* .cvsignore: New file
+	
+	* paxlib: New directory
+	* paxlib/Makefile.am: New file
+	* paxlib/pax.h: Likewise
+	* paxlib/paxbuf.c: Likewise
+	* paxlib/paxbuf.h: Likewise
+	* paxlib/rtape.c: Likewise
+	* paxlib/tar.h: Likewise
+	* paxlib/tarbuf.c: Likewise
+	* paxlib/tardef.h: Likewise
+	
+	* po: New directory
+	* po/.cvsignore: New file
+	* po/Makevars: Likewise
+	* po/POTFILES.in: Likewise
+	
+	* paxtest: New directory
+	* paxtest/Makefile.am: New file
+	* paxtest/.cvsignore: New file
+	* paxtest/paxtest.c: New file
+	* paxtest/paxtest.h: New file
+	
+	* lib/Makefile.tmpl: New file
+	* lib/.cvsignore: New file
+	* lib/paxbuf.c: Removed
+	* lib/paxbuf.h: Removed
+	* m4/.cvsignore: New file
+
+	* build-aux: New directory
+	* build-aux/bootstrap: New file
+	* build-aux/gnulib.modules: New file
+	* build-aux/.cvsignore: New file
+	
+	* doc/genfile.texi: Minor fixes
+	
 2005-05-12  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* lib/system.h: If mkdev is defined, use it as makedev. Proposed
