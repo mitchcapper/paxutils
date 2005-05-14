@@ -19,6 +19,7 @@
 	* paxlib/tar.h: Likewise
 	* paxlib/tarbuf.c: Likewise
 	* paxlib/tardef.h: Likewise
+	* paxlib/.cvsignore: New file
 	
 	* po: New directory
 	* po/.cvsignore: New file
