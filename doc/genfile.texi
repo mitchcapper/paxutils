@@ -79,7 +79,7 @@ name to use. Currently two patterns are implemented:
 @dfn{data fragments}, separated by @dfn{holes} or blocks of zeros. On
 many operating systems, actual disk storage is not allocated for
 holes, but they are counted in the length of the file. To create a
-sparse file @command{genfile} should know where to put data fragments,
+sparse file, @command{genfile} should know where to put data fragments,
 and what data to use to fill them. So, when @option{--sparse} is given
 the rest of the command line specifies a so-called @dfn{file map}.
 
@@ -223,7 +223,7 @@ experimental mode.
     The @samp{Exec Mode} is toggled by @option{--run} command line
 option (or its alias @option{-r}). The argument to this option gives
 the command line to be executed. The actual command line is
-constructed by insertin @option{--checkpoint} option between the
+constructed by inserting @option{--checkpoint} option between the
 command name and its first argument (if any). Due to this, the
 argument to @option{--run} may not use traditional @command{tar}
 option syntax, i.e. the following is wrong: 
@@ -265,7 +265,7 @@ given by previous @option{--length} and @option{pattern} options.
 timestamps are changed to the current time, unless @option{--date}
 option was given, in which case they are changed to the specified
 time. Argument to @option{--date} option is a date specification in
-almost arbitrary format (@pxref{Date input formats}).
+an almost arbitrary format (@pxref{Date input formats}).
 
 @item --exec @var{command}
     Execute given shell command.
@@ -276,7 +276,7 @@ almost arbitrary format (@pxref{Date input formats}).
 standard output notifications about checkpoints being executed and to
 verbosely describe exit status of the command.
 
-    While the command is being execute its standard output remains
+    While the command is being executed its standard output remains
 connected to descriptor 1. All messages it prints to file descriptor
 2, except checkpoint notifications, are forwarded to standard
 error.
