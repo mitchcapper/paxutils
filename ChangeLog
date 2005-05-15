@@ -1,3 +1,14 @@
+2005-05-14  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* COPYING, Makefile.am, configure.ac, build-aux/bootstrap,
+	lib/Makefile.tmpl, lib/rmt.h, lib/rtapelib.c, lib/system.h,
+	paxlib/Makefile.am, paxlib/pax.h, paxlib/paxbuf.c,
+	paxlib/paxbuf.h, paxlib/rtape.c, paxlib/tar.h, paxlib/tarbuf.c,
+	paxlib/tardef.h, paxtest/Makefile.am, paxtest/paxtest.c,
+	paxtest/paxtest.h, rmt/rmt.c, tests/argcv.c, tests/argcv.h,
+	tests/genfile.c:
+	Update FSF postal mail address.
+
 2005-05-14  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* AUTHORS: New file
@@ -9,7 +20,7 @@
 	* Makefile.am: New file
 	* configure.ac: New file
 	* .cvsignore: New file
-	
+
 	* paxlib: New directory
 	* paxlib/Makefile.am: New file
 	* paxlib/pax.h: Likewise
@@ -20,18 +31,18 @@
 	* paxlib/tarbuf.c: Likewise
 	* paxlib/tardef.h: Likewise
 	* paxlib/.cvsignore: New file
-	
+
 	* po: New directory
 	* po/.cvsignore: New file
 	* po/Makevars: Likewise
 	* po/POTFILES.in: Likewise
-	
+
 	* paxtest: New directory
 	* paxtest/Makefile.am: New file
 	* paxtest/.cvsignore: New file
 	* paxtest/paxtest.c: New file
 	* paxtest/paxtest.h: New file
-	
+
 	* lib/Makefile.tmpl: New file
 	* lib/.cvsignore: New file
 	* lib/paxbuf.c: Removed
@@ -42,9 +53,9 @@
 	* build-aux/bootstrap: New file
 	* build-aux/gnulib.modules: New file
 	* build-aux/.cvsignore: New file
-	
+
 	* doc/genfile.texi: Minor fixes
-	
+
 2005-05-12  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* lib/system.h: If mkdev is defined, use it as makedev. Proposed
@@ -93,7 +104,7 @@
 2004-12-22  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* rmt/rmt.c (main): Reverted changes. setlocale()
-	is handled by system.h. 
+	is handled by system.h.
 
 2004-12-21  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
@@ -114,7 +125,7 @@
 
 	Initial import.
 
-	
+
 Local Variables:
 mode: change-log
 version-control: never
