@@ -1,5 +1,18 @@
 
 AC_DEFUN([PU_RMT],[
+  # Set LIB_SETSOCKOPT to -lnsl -lsocket if necessary.
+  pu_save_LIBS=$LIBS
+  LIB_SETSOCKOPT=
+  AC_SEARCH_LIBS(setsockopt, [socket], ,
+    [AC_SEARCH_LIBS(setsockopt, [socket], , , [-lnsl])])
+  AC_SEARCH_LIBS(setsockopt, [nsl])
+
+  case "$ac_cv_search_setsockopt" in
+    -l*) LIB_SETSOCKOPT=$ac_cv_search_setsockopt
+  esac
+  AC_SUBST(LIB_SETSOCKOPT)
+  LIBS=$pu_save_LIBS
+
   AC_CHECK_FUNCS_ONCE([strerror])
   enable_rmt() {
     if test $ac_cv_header_sys_mtio_h = yes; then
