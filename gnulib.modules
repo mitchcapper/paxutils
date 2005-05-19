@@ -3,6 +3,7 @@
 
 dirname
 full-write
+getdate
 getopt
 safe-read
 stdbool
