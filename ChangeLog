@@ -1,3 +1,8 @@
+2005-05-19  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* gnulib.modules: Add getdate. Needed by genfile.
+	* m4/rmt.m4 (PU_RMT): Check for LIB_SETSOCKOPT
+
 2005-05-14  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* COPYING, Makefile.am, configure.ac, build-aux/bootstrap,
