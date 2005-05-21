@@ -1,4 +1,5 @@
 convert.c
 error.c
 exit.c
-paxerror.h
+names.c
+paxlib.h

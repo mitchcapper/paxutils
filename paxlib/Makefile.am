@@ -26,8 +26,9 @@ noinst_HEADERS = tar.h paxbuf.h pax.h
 libpax_a_SOURCES = \
  error.c\
  exit.c\
+ names.c\
  paxbuf.c\
- paxerror.h\
+ paxlib.h\
  tarbuf.c\
  rtape.c
 
