@@ -17,7 +17,7 @@
    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 #include <system.h>
-#include <paxerror.h>
+#include <paxlib.h>
 
 /* Decode MODE from its binary form in a stat structure, and encode it
    into a 9-byte string STRING, terminated with a NUL.  */

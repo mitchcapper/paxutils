@@ -17,7 +17,7 @@
    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 #include <system.h>
-#include <paxerror.h>
+#include <paxlib.h>
 
 int exit_status;
 
