@@ -1,3 +1,13 @@
+2005-05-22  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* paxlib/paxerror.h: Removed
+	* paxlib/names.c: New file
+	* paxlib/paxlib.h: New file
+	* paxlib/DISTFILES: Add names.c,paxlib.h; remove paxerror.h
+	* paxlib/Makefile.am: Likewise
+	* paxlib/error.c: Rename paxerror.h to paxlib.h
+	* paxlib/exit.c: Likewise.
+	
 2005-05-19  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* paxlib/DISTFILES: New file
