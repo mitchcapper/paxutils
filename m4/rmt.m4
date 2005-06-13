@@ -24,7 +24,7 @@ AC_DEFUN([PU_RMT],[
 #include <sys/socket.h>],
       pu_cv_header_rmt=yes,
       pu_cv_header_rmt=no)])
-      test $pu_cv_header_rmt = yes && PU_RMT_PROG='rmt'
+      test $pu_cv_header_rmt = yes && PU_RMT_PROG='rmt$(EXEEXT)'
       AC_SUBST(PU_RMT_PROG)
     fi
   }
