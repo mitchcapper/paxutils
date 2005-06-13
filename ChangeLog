@@ -1,3 +1,11 @@
+2005-06-13  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* m4/rmt.m4 (PU_RMT): Fix building on Cygwin. Proposed by Corinna
+	Vinschen <vinschen@redhat.com>.
+	* m4/system.m4 (PU_SYSTEM): Add AC_STRUCT_ST_BLKSIZE.
+	Require gl_AC_TYPE_UINTMAX_T (this means that uintmax_t.m4 from
+	gnulibs should be used).
+
 2005-05-22  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* paxlib/paxerror.h: Removed
