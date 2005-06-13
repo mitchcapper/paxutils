@@ -12,7 +12,9 @@ AC_DEFUN([PU_SYSTEM],[
 
   AC_CHECK_MEMBERS([struct stat.st_blksize]) dnl instead of AC_STRUCT_ST_BLKSIZE
   AC_STRUCT_ST_BLOCKS
+  AC_STRUCT_ST_BLKSIZE
 
   AC_CHECK_FUNCS_ONCE(lstat mkfifo setlocale)
+  AC_REQUIRE([gl_AC_TYPE_UINTMAX_T])
 ])
 
