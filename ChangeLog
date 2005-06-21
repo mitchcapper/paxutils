@@ -1,3 +1,14 @@
+2005-06-21  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* tests/genfile.c: Port to Solaris 8.
+	Include <signal.h>, for 'signal'.
+	(SIGCHLD) [! defined SIGCHLD && defined SIGCLD]: Define.
+	(child_exited, sig_child): Remove; not needed.
+	(exec_command): Use a prototype.
+	(main): Set SIGCHLD handler to default, not to sig_child.
+	And do this only if SIGCHLD is defined.  This uses the
+	same pattern that src/tar.c uses.
+
 2005-06-13  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* m4/rmt.m4 (PU_RMT): Fix building on Cygwin. Proposed by Corinna
@@ -15,7 +26,7 @@
 	* paxlib/Makefile.am: Likewise
 	* paxlib/error.c: Rename paxerror.h to paxlib.h
 	* paxlib/exit.c: Likewise.
-	
+
 2005-05-19  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
 	* paxlib/DISTFILES: New file
