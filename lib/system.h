@@ -1,7 +1,7 @@
 /* System dependent definitions for GNU tar.
 
    Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2003,
-   2004 Free Software Foundation, Inc.
+   2004, 2005 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -453,24 +453,9 @@ char *getenv ();
 # include <inttypes.h>
 #endif
 
-/* These macros work even on ones'-complement hosts (!).
-   The extra casts work around common compiler bugs.  */
-#define TYPE_SIGNED(t) (! ((t) 0 < (t) -1))
-#define TYPE_MINIMUM(t) (TYPE_SIGNED (t) \
-			 ? ~ (t) 0 << (sizeof (t) * CHAR_BIT - 1) \
-			 : (t) 0)
-#define TYPE_MAXIMUM(t) ((t) (~ (t) 0 - TYPE_MINIMUM (t)))
+#include <intprops.h>
 
-/* Bound on length of the string representing an integer value of type t.
-   Subtract one for the sign bit if t is signed;
-   302 / 1000 is log10 (2) rounded up;
-   add one for integer division truncation;
-   add one more for a minus sign if t is signed.  */
-#define INT_STRLEN_BOUND(t) \
-  ((sizeof (t) * CHAR_BIT - TYPE_SIGNED (t)) * 302 / 1000 \
-   + 1 + TYPE_SIGNED (t))
-
-#define UINTMAX_STRSIZE_BOUND (INT_STRLEN_BOUND (uintmax_t) + 1)
+#define UINTMAX_STRSIZE_BOUND INT_BUFSIZE_BOUND (uintmax_t)
 
 /* Prototypes for external functions.  */
 
@@ -487,10 +472,6 @@ char *getenv ();
 #endif
 #if ! HAVE_DECL_TIME
 time_t time ();
-#endif
-
-#ifdef HAVE_UTIME_H
-# include <utime.h>
 #endif
 
 /* Library modules.  */

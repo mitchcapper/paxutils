@@ -28,6 +28,7 @@
 #include <argmatch.h>
 #include <argp.h>
 #include <argcv.h>
+#include <utimens.h>
 
 #ifndef EXIT_SUCCESS
 # define EXIT_SUCCESS 0
@@ -38,16 +39,6 @@
 
 #if ! defined SIGCHLD && defined SIGCLD
 # define SIGCHLD SIGCLD
-#endif
-
-#if HAVE_UTIME_H
-# include <utime.h>
-#else
-struct utimbuf
-  {
-    long actime;
-    long modtime;
-  };
 #endif
 
 enum pattern
@@ -509,10 +500,14 @@ exec_checkpoint (struct action *p)
     {
     case OPT_TOUCH:
       {
-	struct utimbuf u;
+	struct timespec ts[2];
 
-	u.actime = u.modtime = p->ts.tv_sec;
-	utime (p->name, &u);
+	ts[0] = ts[1] = p->ts;
+	if (utimens (p->name, ts) != 0)
+	  {
+	    error (0, errno, _("cannot set time on `%s'"), p->name);
+	    break;
+	  }
       }
       break;
 
@@ -521,8 +516,7 @@ exec_checkpoint (struct action *p)
 	FILE *fp = fopen (p->name, "a");
 	if (!fp)
 	  {
-	    error (0, errno, _("cannot open `%s'"),
-		   p->name, strerror (errno));
+	    error (0, errno, _("cannot open `%s'"), p->name);
 	    break;
 	  }
 
@@ -536,8 +530,7 @@ exec_checkpoint (struct action *p)
 	int fd = open (p->name, O_RDWR);
 	if (fd == -1)
 	  {
-	    error (0, errno, _("cannot open `%s'"),
-		   p->name, strerror (errno));
+	    error (0, errno, _("cannot open `%s'"), p->name);
 	    break;
 	  }
 	ftruncate (fd, p->size);
@@ -709,7 +702,7 @@ main (int argc, char **argv)
     {
     case mode_stat:
       if (argc == 0)
-	error (EXIT_FAILURE, 0, "--stat requires file names");
+	error (EXIT_FAILURE, 0, _("--stat requires file names"));
 
       while (argc--)
 	print_stat (*argv++);

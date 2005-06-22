@@ -22,6 +22,7 @@
 #define _paxlib_h_
 
 #include <hash.h>
+#include <inttostr.h>
 
 /* Error reporting functions and definitions */
 
@@ -100,9 +101,7 @@ void write_error (char const *);
 void pax_exit (void);
 void fatal_exit (void) __attribute__ ((noreturn));
 
-#define STRINGIFY_BIGINT(i, b) \
-  stringify_uintmax_t_backwards ((uintmax_t) (i), (b) + UINTMAX_STRSIZE_BOUND)
-char *stringify_uintmax_t_backwards (uintmax_t, char *);
+#define STRINGIFY_BIGINT(i, b) umaxtostr (i, b)
 
 
 /* Name-related functions */

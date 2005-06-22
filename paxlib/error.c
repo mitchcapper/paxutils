@@ -18,6 +18,8 @@
 
 #include <system.h>
 #include <paxlib.h>
+#include <quote.h>
+#include <quotearg.h>
 
 /* Decode MODE from its binary form in a stat structure, and encode it
    into a 9-byte string STRING, terminated with a NUL.  */
@@ -355,5 +357,3 @@ chdir_fatal (char const *name)
 {
   call_arg_fatal ("chdir", name);
 }
-
-

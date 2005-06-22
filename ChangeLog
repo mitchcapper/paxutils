@@ -1,5 +1,24 @@
 2005-06-21  Paul Eggert  <eggert@cs.ucla.edu>
 
+	Improve support for time stamps and other wide integers.
+	* gnulib.modules: Add inttostr, quote, quotearg.
+	* lib/system.h (TYPE_SIGNED, TYPE_MINIMUM, TYPE_MAXIMUM): Remove.
+	(INT_STRLEN_BOUND): Remove.
+	Include "intprops.h" instead.
+	(UINTMAX_STRSIZE_BOUND): Define in terms of INT_BUFSIZE_BOUND,
+	not INT_STRLEN_BOUND.
+	[HAVE_UTIME_H]: Don't include utime.h.
+	* paxlib/DISTFILES: Remove convert.c.
+	* paxlib/convert.c: Remove.
+	* paxlib/error.c: Include quote.h, quotearg.h.
+	* paxlib/paxlib.h: Include inttostr.h.
+	(STRINGIFY_BIGINT): Define in terms of umaxtostr.
+	(stringify_uintmax_t_backwards): Remove decl.
+	* tests/genfile.c: Include <utimens.h> instead of rolling our own.
+	(exec_checkpoint): Use utimens instead of rolling our own.
+	Don't pass extra args to error.
+	(main): Wrap message inside _().
+
 	* tests/genfile.c: Port to Solaris 8.
 	Include <signal.h>, for 'signal'.
 	(SIGCHLD) [! defined SIGCHLD && defined SIGCLD]: Define.

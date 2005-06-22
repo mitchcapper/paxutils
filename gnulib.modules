@@ -5,6 +5,9 @@ dirname
 full-write
 getdate
 getopt
+inttostr
+quote
+quotearg
 safe-read
 stdbool
 strtol
