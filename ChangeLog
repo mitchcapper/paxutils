@@ -1,3 +1,7 @@
+2005-06-23  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
+
+	* tests/genfile.c (print_stat): Use umaxstr.  
+
 2005-06-21  Paul Eggert  <eggert@cs.ucla.edu>
 
 	Improve support for time stamps and other wide integers.
