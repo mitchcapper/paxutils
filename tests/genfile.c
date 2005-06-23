@@ -29,6 +29,7 @@
 #include <argp.h>
 #include <argcv.h>
 #include <utimens.h>
+#include <inttostr.h>
 
 #ifndef EXIT_SUCCESS
 # define EXIT_SUCCESS 0
@@ -433,6 +434,7 @@ print_stat (const char *name)
 {
   char *fmt, *p;
   struct stat st;
+  char buf[UINTMAX_STRSIZE_BOUND];
 
   if (stat (name, &st))
     {
@@ -460,11 +462,11 @@ print_stat (const char *name)
       else if (strcmp (p, "gid") == 0)
 	printf ("%lu", (unsigned long) st.st_gid);
       else if (strcmp (p, "size") == 0)
-	printf ("%lu", (unsigned long) st.st_size);
+	printf ("%s", umaxtostr (st.st_size, buf));
       else if (strcmp (p, "blksize") == 0)
-	printf ("%lu", (unsigned long) st.st_blksize);
+	printf ("%s", umaxtostr (st.st_blksize, buf));
       else if (strcmp (p, "blocks") == 0)
-	printf ("%lu", (unsigned long) st.st_blocks);
+	printf ("%s", umaxtostr (st.st_blocks, buf));
       else if (strcmp (p, "atime") == 0)
 	printf ("%lu", (unsigned long) st.st_atime);
       else if (strcmp (p, "atimeH") == 0)
