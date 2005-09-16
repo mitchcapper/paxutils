@@ -1,10 +1,18 @@
+2005-09-16  Paul Eggert  <eggert@cs.ucla.edu>
+
+	Merge changes from gnulib for file system sub-second time stamps.
+	* configure.ac: Remove checks for struct stat.st_spare1, struct
+	stat.st_atim.tv_nsec, struct stat.st_atimespec.tv_nsec, struct
+	stat.st_atimensec, as gnulib now does this for us.
+	Similarly for LIB_CLOCK_GETTIME.
+
 2005-06-23  Sergey Poznyakoff  <gray@Mirddin.farlep.net>
 
-	* tests/genfile.c (print_stat): Use umaxstr.  
+	* tests/genfile.c (print_stat): Use umaxstr.
 
 2005-06-21  Paul Eggert  <eggert@cs.ucla.edu>
 
-	Improve support for time stamps and other wide integers.
+	Improve support for wide time stamps and other wide integers.
 	* gnulib.modules: Add inttostr, quote, quotearg.
 	* lib/system.h (TYPE_SIGNED, TYPE_MINIMUM, TYPE_MAXIMUM): Remove.
 	(INT_STRLEN_BOUND): Remove.
