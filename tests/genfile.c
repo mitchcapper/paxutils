@@ -28,6 +28,8 @@
 #include <argmatch.h>
 #include <argp.h>
 #include <argcv.h>
+#include <getdate.h>
+#include <setenv.h>
 #include <utimens.h>
 #include <inttostr.h>
 
