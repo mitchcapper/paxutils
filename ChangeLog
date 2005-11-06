@@ -1,3 +1,8 @@
+2005-11-06  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* lib/system.h (strtoimax, strtoumax): Declare if the system
+	headers don't.
+
 2005-09-16  Paul Eggert  <eggert@cs.ucla.edu>
 
 	Merge changes from gnulib for file system sub-second time stamps.

@@ -453,6 +453,13 @@ char *getenv ();
 # include <inttypes.h>
 #endif
 
+#if !HAVE_DECL_STRTOIMAX && !defined strtoimax
+intmax_t strtoimax ();
+#endif
+#if !HAVE_DECL_STRTOUMAX && !defined strtoumax
+uintmax_t strtoumax ();
+#endif
+
 #include <intprops.h>
 
 #define UINTMAX_STRSIZE_BOUND INT_BUFSIZE_BOUND (uintmax_t)
