@@ -197,7 +197,7 @@ decode_oflag (char const *oflag_string)
 #ifdef O_NOCTTY
 	{"NOCTTY", O_NOCTTY},
 #endif
-#ifdef O_NONBLOCK
+#if O_NONBLOCK
 	{"NONBLOCK", O_NONBLOCK},
 #endif
 	{"RDONLY", O_RDONLY},
@@ -321,15 +321,15 @@ lseek_device (void)
   int negative;
   int whence;
   char *p;
-	    
+
   get_string (count_string);
   get_string (position_string);
   DEBUG2 ("rmtd: L %s %s\n", count_string, position_string);
-	    
+
   /* Parse count_string, taking care to check for overflow.
      We can't use standard functions,
      since off_t might be longer than long.  */
-  
+
   for (p = count_string;  *p == ' ' || *p == '\t';  p++)
     ;
 
@@ -362,20 +362,20 @@ lseek_device (void)
     case 0:
       whence = SEEK_SET;
       break;
-		
+
     case 1:
       whence = SEEK_CUR;
       break;
-		
+
     case 2:
       whence = SEEK_END;
       break;
-      
+
     default:
       report_error_message (N_("Seek direction out of range"));
       exit (EXIT_FAILURE);
     }
-	    
+
   count = lseek (tape, count, whence);
   if (count < 0)
     report_numbered_error (errno);
@@ -389,9 +389,9 @@ lseek_device (void)
       do
 	*--p = '0' + (int) (count % 10);
       while ((count /= 10) != 0);
-      
+
       DEBUG1 ("rmtd: A %s\n", p);
-      
+
       sprintf (reply_buffer, "A%s\n", p);
       full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
     }
@@ -404,11 +404,11 @@ write_device (void)
   size_t size;
   size_t counter;
   size_t status = 0;
-  
+
   get_string (count_string);
   size = get_long (count_string);
   DEBUG1 ("rmtd: W %s\n", count_string);
-  
+
   prepare_input_buffer (STDIN_FILENO, size);
   for (counter = 0; counter < size; counter += status)
     {
@@ -417,7 +417,7 @@ write_device (void)
       if (status == SAFE_READ_ERROR || status == 0)
 	{
 	  DEBUG (_("rmtd: Premature eof\n"));
-	  
+
 	  report_error_message (N_("Premature end of file"));
 	  exit (EXIT_FAILURE); /* exit status used to be 2 */
 	}
@@ -435,10 +435,10 @@ read_device (void)
   char count_string[STRING_SIZE];
   size_t size;
   size_t status;
-  
+
   get_string (count_string);
   DEBUG1 ("rmtd: R %s\n", count_string);
-  
+
   size = get_long (count_string);
   prepare_input_buffer (-1, size);
   status = safe_read (tape, record_buffer, size);
@@ -524,7 +524,7 @@ status_device (void)
 #ifdef MTIOCGET
   {
     struct mtget operation;
-    
+
     if (ioctl (tape, MTIOCGET, (char *) &operation) < 0)
       report_numbered_error (errno);
     else
@@ -534,7 +534,7 @@ status_device (void)
       }
 #endif
   }
-}  
+}
 
 int
 main (int argc, char **argv)
@@ -590,7 +590,7 @@ see the file named COPYING for details."));
   while (1)
     {
       errno = 0;
-      
+
       if (safe_read (STDIN_FILENO, &command, 1) != 1)
 	return EXIT_SUCCESS;
 
@@ -599,15 +599,15 @@ see the file named COPYING for details."));
 	case 'O':
 	  open_device ();
 	  break;
-	  
+
 	case 'C':
 	  close_device ();
 	  break;
-	  
+
 	case 'L':
 	  lseek_device ();
 	  break;
-	  
+
 	case 'W':
 	  write_device ();
 	  break;
@@ -615,15 +615,15 @@ see the file named COPYING for details."));
 	case 'R':
 	  read_device ();
 	  break;
-	  
+
 	case 'I':
 	  mtioctop ();
 	  break;
-	  
+
 	case 'S':
 	  status_device ();
 	  break;
-	  
+
 	default:
 	  DEBUG1 (_("rmtd: Garbage command %c\n"), command);
 	  report_error_message (N_("Garbage command"));

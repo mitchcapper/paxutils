@@ -109,9 +109,18 @@ extern int errno;
 #ifndef O_TRUNC
 # define O_TRUNC	32	/* truncate file on open */
 #endif
-				/* MS-DOG forever, with my love! */
-#ifndef	O_BINARY
+
+#ifndef O_BINARY
 # define O_BINARY 0
+#endif
+#ifndef O_DIRECTORY
+# define O_DIRECTORY 0
+#endif
+#ifndef O_NOATIME
+# define O_NOATIME 0
+#endif
+#ifndef O_NONBLOCK
+# define O_NONBLOCK 0
 #endif
 
 /* Declare file status routines and bits.  */

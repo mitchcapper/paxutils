@@ -81,6 +81,7 @@ void read_fatal_details (char const *, off_t, size_t) __attribute__ ((noreturn))
 void read_warn_details (char const *, off_t, size_t);
 void readlink_error (char const *);
 void readlink_warn (char const *);
+void rmdir_error (char const *);
 void savedir_error (char const *);
 void savedir_warn (char const *);
 void seek_error (char const *);

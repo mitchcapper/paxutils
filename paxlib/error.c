@@ -228,6 +228,12 @@ readlink_warn (char const *name)
 }
 
 void
+rmdir_error (char const *name)
+{
+  call_arg_error ("rmdir", name);
+}
+
+void
 savedir_error (char const *name)
 {
   call_arg_error ("savedir", name);

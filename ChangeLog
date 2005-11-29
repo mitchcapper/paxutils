@@ -1,3 +1,14 @@
+2005-11-29  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* lib/rtapelib.c (encode_oflag): Simplify code, since O_NONBLOCK
+	is always defined now.
+	* paxlib/rtape.c (encode_oflag): Likewise.
+	* lib/system.h (O_DIRCTORY, O_NOATIME, O_NONBLOCK): Define to 0
+	if not already defined.
+	* paxlib/error.c (rmdir_error): New function.
+	* paxlib/error.h (rmdir_error): New decl.
+	* rmt/rmt.c (decode_oflag): Use '#if O_NONBLOCK", not ifdef.
+
 2005-11-06  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* lib/system.h (strtoimax, strtoumax): Declare if the system

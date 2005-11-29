@@ -1,7 +1,7 @@
 /* Functions for communicating with a remote tape drive.
 
-   Copyright 1988, 1992, 1994, 1996, 1997, 1999, 2000, 2001, 2004 Free
-   Software Foundation, Inc.
+   Copyright 1988, 1992, 1994, 1996, 1997, 1999, 2000, 2001, 2004,
+   2005 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -340,9 +340,7 @@ encode_oflag (char *buf, int oflag)
 #ifdef O_NOCTTY
   if (oflag & O_NOCTTY) strcat (buf, "|O_NOCTTY");
 #endif
-#ifdef O_NONBLOCK
   if (oflag & O_NONBLOCK) strcat (buf, "|O_NONBLOCK");
-#endif
 #ifdef O_RSYNC
   if (oflag & O_RSYNC) strcat (buf, "|O_RSYNC");
 #endif
@@ -358,7 +356,7 @@ encode_oflag (char *buf, int oflag)
    remote pipe number plus BIAS.  REMOTE_SHELL may be overridden.  On
    error, return -1.  */
 int
-rmt_open__ (const char *file_name, int open_mode, int bias, 
+rmt_open__ (const char *file_name, int open_mode, int bias,
             const char *remote_shell)
 {
   int remote_pipe_number;	/* pseudo, biased file descriptor */

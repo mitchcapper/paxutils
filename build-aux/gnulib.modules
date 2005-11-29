@@ -2,16 +2,19 @@
 # A module name per line. Empty lines and comments are ignored.
 
 argp
-savedir
-unlocked-io
-fileblocks
-error
-gettext
-inttostr
 dirname
+error
+fileblocks
 full-write
 getopt
+gettext
+hash
+inttostr
+quote
+quotearg
 safe-read
+savedir
 stdbool
 strtol
+unlocked-io
 xalloc

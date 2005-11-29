@@ -310,15 +310,15 @@ encode_oflag (char *buf, int oflag)
     case O_RDONLY:
       strcat (buf, "O_RDONLY");
       break;
-      
+
     case O_RDWR:
       strcat (buf, "O_RDWR");
       break;
-      
+
     case O_WRONLY:
       strcat (buf, "O_WRONLY");
       break;
-      
+
     default:
       abort ();
     }
@@ -343,10 +343,8 @@ encode_oflag (char *buf, int oflag)
   if (oflag & O_NOCTTY)
     strcat (buf, "|O_NOCTTY");
 #endif
-#ifdef O_NONBLOCK
   if (oflag & O_NONBLOCK)
     strcat (buf, "|O_NONBLOCK");
-#endif
 #ifdef O_RSYNC
   if (oflag & O_RSYNC)
     strcat (buf, "|O_RSYNC");
@@ -508,7 +506,7 @@ rmt_open (const char *file_name, int open_mode, int bias,
 
 	if (!rmt_command)
 	  rmt_command = DEFAULT_RMT_COMMAND;
-	
+
 	if (remote_user)
 	  execl (remote_shell, remote_shell_basename, remote_host,
 		 "-l", remote_user, rmt_command, (char *) 0);
@@ -650,15 +648,15 @@ rmt_lseek (int handle, off_t offset, int whence)
     case SEEK_SET:
       whence = 0;
       break;
-      
+
     case SEEK_CUR:
       whence = 1;
       break;
-      
+
     case SEEK_END:
       whence = 2;
       break;
-      
+
     default:
       abort ();
     }
@@ -758,4 +756,3 @@ rmt_ioctl (int handle, int operation, char *argument)
 
     }
 }
-
