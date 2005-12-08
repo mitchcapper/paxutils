@@ -57,7 +57,7 @@ const char *program_name;
 static char *file_name;
 
 /* Length of file to generate.  */
-static int file_length = 0;
+static off_t file_length = 0;
 
 /* Pattern to generate.  */
 static enum pattern pattern = DEFAULT_PATTERN;
@@ -221,7 +221,7 @@ struct action
   size_t checkpoint;
   int action;
   char *name;
-  size_t size;
+  off_t size;
   enum pattern pattern;
   struct timespec ts;
 };
@@ -322,9 +322,9 @@ static struct argp argp = {
 
 
 void
-fill (FILE *fp, size_t length, enum pattern pattern)
+fill (FILE *fp, off_t length, enum pattern pattern)
 {
-  size_t i;
+  off_t i;
 
   switch (pattern)
     {
