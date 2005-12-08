@@ -1,3 +1,7 @@
+2005-12-08  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* tests/genfile.c: Fix creation of large files
+
 2005-11-29  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* lib/rtapelib.c (encode_oflag): Simplify code, since O_NONBLOCK
