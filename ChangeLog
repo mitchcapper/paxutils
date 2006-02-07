@@ -1,5 +1,9 @@
 2006-02-07  Paul Eggert  <eggert@cs.ucla.edu>
 
+	* gnulib.modules: Add closeout.
+	* rmt/rmt.c: Include closeout.h.
+	(main, usage): Use close_stdout to report write errors properly.
+
 	* gnulib.modules: Add version-etc-fsf.
 	* rmt/rmt.c: Include <version-etc.h>.
 	(main): Use version_etc rather than rolling our own.
