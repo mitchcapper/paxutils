@@ -35,6 +35,7 @@
 #include <localedir.h>
 #include <safe-read.h>
 #include <full-write.h>
+#include <version-etc.h>
 
 #include <getopt.h>
 #include <sys/socket.h>
@@ -560,14 +561,8 @@ main (int argc, char **argv)
       usage (EXIT_SUCCESS);
 
     case 'v':
-      {
-	printf ("rmt (%s) %s\n%s\n", PACKAGE_NAME, PACKAGE_VERSION,
-		"Copyright (C) 2004 Free Software Foundation, Inc.");
-	puts (_("\
-This program comes with NO WARRANTY, to the extent permitted by law.\n\
-You may redistribute it under the terms of the GNU General Public License;\n\
-see the file named COPYING for details."));
-      }
+      version_etc (stdout, "rmt", PACKAGE_NAME, PACKAGE_VERSION,
+		   "John Gilmore", "Jay Fenlason", (char *) NULL);
       return EXIT_SUCCESS;
 
     case -1:

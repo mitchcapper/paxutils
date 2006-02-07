@@ -1,3 +1,9 @@
+2006-02-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* gnulib.modules: Add version-etc-fsf.
+	* rmt/rmt.c: Include <version-etc.h>.
+	(main): Use version_etc rather than rolling our own.
+
 2005-12-08  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* tests/genfile.c: Fix creation of large files
