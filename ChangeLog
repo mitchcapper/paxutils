@@ -1,3 +1,8 @@
+2006-02-20  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* m4/system.m4: Remove sys/buf.h from AC_CHECK_HEADERS_ONCE, check
+	for it separately (needs sys/param.h on some systems).
+
 2006-02-20  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* lib/DISTFILES: Add system-ioctl.h.
