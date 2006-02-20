@@ -32,6 +32,7 @@
    MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  */
 
 #include "system.h"
+#include "system-ioctl.h"
 #include <closeout.h>
 #include <localedir.h>
 #include <safe-read.h>

@@ -1,3 +1,14 @@
+2006-02-20  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* lib/DISTFILES: Add system-ioctl.h.
+	* lib/system.h: Move the MTIO* stuff into....
+	* lib/system-ioctl.h: New file.  That way, the symbols defined
+	by these includes won't collide with the symbols defined by
+	<sys/filio.h> on Solaris when compiling misc.c.
+	* lib/rtapelib.c: Include system-ioctl.h.
+	* paxlib/rtape.c: Likewise.
+	* rmt/rmt.c: Likewise.
+
 2006-02-07  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* gnulib.modules: Add closeout.
