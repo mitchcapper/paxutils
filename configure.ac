@@ -1,6 +1,6 @@
 # This file is part of GNU paxutils
 #
-# Copyright (C) 2005 Free Software Foundation, Inc.
+# Copyright (C) 2005, 2006 Free Software Foundation, Inc.
 #
 # GNU paxutils is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -35,7 +35,7 @@ AC_CHECK_HEADERS(fcntl.h linux/fd.h memory.h net/errno.h \
   sgtty.h string.h \
   sys/param.h sys/device.h sys/gentape.h \
   sys/inet.h sys/io/trioctl.h \
-  sys/mtio.h sys/time.h sys/tprintf.h sys/tape.h \
+  sys/mtio.h sys/tprintf.h sys/tape.h \
   unistd.h locale.h)
 
 AC_CHECK_HEADERS([sys/buf.h], [], [],
@@ -93,7 +93,6 @@ PU_SYSTEM
 AC_CHECK_FUNCS(fsync lstat mkfifo readlink strerror symlink setlocale utimes)
 AC_CHECK_DECLS([getgrgid],,, [#include <grp.h>])
 AC_CHECK_DECLS([getpwuid],,, [#include <pwd.h>])
-AC_CHECK_DECLS([time],,, [#include <time.h>])
 
 # Set LIB_SETSOCKOPT to -lnsl -lsocket if necessary.
 tar_save_LIBS=$LIBS

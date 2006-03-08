@@ -1,3 +1,18 @@
+2006-03-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* configure.ac (AC_CHECK_HEADERS): Don't check for sys/time.h,
+	since we no longer use HAVE_SYS_TIME_H.
+	(AC_CHECK_DECLS): Don't check for 'time', since we assume
+	C89 or better.
+	* lib/system.h: Include <unistd.h> unconditionally, since we now
+	assume the unistd module.
+	(time): Remove decl; not needed, since we assume C89 or better.
+	Don't bother checking for HAVE_SYS_TIME_H when deciding whether
+	to include <sys/time.h>, since TIME_WITH_SYS_TIME implies sys/time.h
+	exists.
+	* m4/system.m4 (PU_SYSTEM): Don't check for unistd.h or sys/time.h,
+	or for time or valloc.
+
 2006-02-20  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* m4/system.m4: Remove sys/buf.h from AC_CHECK_HEADERS_ONCE, check

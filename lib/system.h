@@ -260,9 +260,7 @@ extern int errno;
 #define MODE_ALL	(S_ISUID | S_ISGID | S_ISVTX | MODE_RWX)
 
 /* Include <unistd.h> before any preprocessor test of _POSIX_VERSION.  */
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#endif
+#include <unistd.h>
 
 #ifndef SEEK_SET
 # define SEEK_SET 0
@@ -445,11 +443,8 @@ uintmax_t strtoumax ();
 #endif
 
 #include <time.h>
-#if defined(HAVE_SYS_TIME_H) && defined(TIME_WITH_SYS_TIME)
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
-#endif
-#if ! HAVE_DECL_TIME
-time_t time ();
 #endif
 
 /* Library modules.  */
