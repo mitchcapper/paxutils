@@ -407,7 +407,6 @@ char *getenv ();
 #endif
 
 #if WITH_DMALLOC
-# undef HAVE_DECL_VALLOC
 # define DMALLOC_FUNC_CHECK
 # include <dmalloc.h>
 #endif

@@ -10,6 +10,9 @@
 	Don't bother checking for HAVE_SYS_TIME_H when deciding whether
 	to include <sys/time.h>, since TIME_WITH_SYS_TIME implies sys/time.h
 	exists.
+	(HAVE_DECL_VALLOC) [WITH_DMALLOC]: Remove #undef, since this symbol
+	is no longer used.
+
 	* m4/system.m4 (PU_SYSTEM): Don't check for unistd.h or sys/time.h,
 	or for time or valloc.
 
