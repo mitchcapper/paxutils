@@ -1,11 +1,11 @@
 /* Generate a file containing some preset patterns.
    Print statistics for existing files.
 
-   Copyright (C) 1995, 1996, 1997, 2001, 2003, 2004, 2005 Free Software
-   Foundation, Inc.
+   Copyright (C) 1995, 1996, 1997, 2001, 2003, 2004, 2005, 2006
+   Free Software Foundation, Inc.
 
    François Pinard <pinard@iro.umontreal.ca>, 1995.
-   Sergey Poznyakoff <gray@mirddin.farlep.net>, 2004, 2005.
+   Sergey Poznyakoff <gray@mirddin.farlep.net>, 2004, 2005, 2006.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -692,6 +692,9 @@ main (int argc, char **argv)
 
   program_name = argv[0];
   setlocale (LC_ALL, "");
+  bindtextdomain (PACKAGE, LOCALEDIR);
+  textdomain (PACKAGE);
+  
   get_date (&touch_time, "now", NULL);
 
   /* Decode command options.  */
