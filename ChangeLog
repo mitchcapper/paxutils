@@ -1,3 +1,14 @@
+2006-03-12  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* gnulib.modules: Add obstack
+	* rmt/rmt.c (get_string): Renamed to get_string_n. All callers
+	changed.
+	(get_string,free_string,i18n_setup): New function.
+	(usage): Call i18n_setup
+	(open_device): Use new get_string function to remove the
+	limitation on the device name length.
+	* tests/genfile.c: Properly initialize i18n.
+
 2006-03-07  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* configure.ac (AC_CHECK_HEADERS): Don't check for sys/time.h,
