@@ -38,7 +38,9 @@
 #include <safe-read.h>
 #include <full-write.h>
 #include <version-etc.h>
-
+#define obstack_chunk_alloc malloc
+#define obstack_chunk_free free
+#include <obstack.h>
 #include <getopt.h>
 #include <sys/socket.h>
 
@@ -64,6 +66,9 @@ static size_t allocated_size;
 
 /* Buffer for constructing the reply.  */
 static char reply_buffer[BUFSIZ];
+
+/* Obstack for arbitrary-sized strings */
+struct obstack string_stk;
 
 /* Debugging tools.  */
 
@@ -96,18 +101,47 @@ report_numbered_error (int num)
   full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
 }
 
-static void
-get_string (char *string)
+static char *
+get_string ()
 {
-  int counter;
+  size_t counter;
+  
+  for (counter = 0; ; counter++)
+    {
+      char c;
+      if (safe_read (STDIN_FILENO, &c, 1) != 1)
+	exit (EXIT_SUCCESS);
+
+      if (c == '\n')
+	break;
+      
+      obstack_1grow (&string_stk, c);
+    }
+  obstack_1grow (&string_stk, 0);
+  return obstack_finish (&string_stk);
+}
+
+static void
+free_string (char *string)
+{
+  obstack_free (&string_stk, string);
+}
+
+static void
+get_string_n (char *string)
+{
+  size_t counter;
 
   for (counter = 0; ; counter++)
     {
       if (safe_read (STDIN_FILENO, string + counter, 1) != 1)
 	exit (EXIT_SUCCESS);
 
-      if (string[counter] == '\n' || counter == STRING_SIZE - 1)
+      if (string[counter] == '\n')
 	break;
+
+      if (counter == STRING_SIZE - 1)
+	report_error_message (N_("Input string too long"));
     }
   string[counter] = '\0';
 }
@@ -244,11 +278,23 @@ static struct option const long_opts[] =
   {0, 0, 0, 0}
 };
 
+/* In-line localization is used only if --help or --version are
+   locally used.  Otherwise, the localization burden lies with tar. */
+static void
+i18n_setup ()
+{
+  setlocale (LC_ALL, "");
+  bindtextdomain (PACKAGE, LOCALEDIR);
+  textdomain (PACKAGE);
+}
+
 static void usage (int) __attribute__ ((noreturn));
 
 static void
 usage (int status)
 {
+  i18n_setup ();
+
   if (status != EXIT_SUCCESS)
     fprintf (stderr, _("Try `%s --help' for more information.\n"),
 	     program_name);
@@ -282,17 +328,18 @@ respond (long status)
 static void
 open_device (void)
 {
-  char device_string[STRING_SIZE];
+  char *device_string;
   char oflag_string[STRING_SIZE];
 
-  get_string (device_string);
-  get_string (oflag_string);
+  device_string = get_string ();
+  get_string_n (oflag_string);
   DEBUG2 ("rmtd: O %s %s\n", device_string, oflag_string);
 
   if (tape >= 0)
     close (tape);
 
   tape = open (device_string, decode_oflag (oflag_string), MODE_RW);
+  free_string (device_string);
   if (tape < 0)
     report_numbered_error (errno);
   else
@@ -302,9 +349,7 @@ open_device (void)
 static void
 close_device (void)
 {
-  char device_string[STRING_SIZE];
-
-  get_string (device_string); /* discard */
+  free_string (get_string ()); /* discard */
   DEBUG ("rmtd: C\n");
 
   if (close (tape) < 0)
@@ -326,8 +371,8 @@ lseek_device (void)
   int whence;
   char *p;
 
-  get_string (count_string);
-  get_string (position_string);
+  get_string_n (count_string);
+  get_string_n (position_string);
   DEBUG2 ("rmtd: L %s %s\n", count_string, position_string);
 
   /* Parse count_string, taking care to check for overflow.
@@ -409,7 +454,7 @@ write_device (void)
   size_t counter;
   size_t status = 0;
 
-  get_string (count_string);
+  get_string_n (count_string);
   size = get_long (count_string);
   DEBUG1 ("rmtd: W %s\n", count_string);
 
@@ -440,7 +485,7 @@ read_device (void)
   size_t size;
   size_t status;
 
-  get_string (count_string);
+  get_string_n (count_string);
   DEBUG1 ("rmtd: R %s\n", count_string);
 
   size = get_long (count_string);
@@ -462,8 +507,8 @@ mtioctop (void)
   char operation_string[STRING_SIZE];
   char count_string[STRING_SIZE];
 
-  get_string (operation_string);
-  get_string  (count_string);
+  get_string_n (operation_string);
+  get_string_n (count_string);
   DEBUG2 ("rmtd: I %s %s\n", operation_string, count_string);
 
 #ifdef MTIOCTOP
@@ -545,16 +590,10 @@ main (int argc, char **argv)
 {
   char command;
 
-  /* FIXME: Localization is meaningless, unless --help and --version are
-     locally used.  Localization would be best accomplished by the calling
-     tar, on messages found within error packets.  */
-
   program_name = argv[0];
 
-  setlocale (LC_ALL, "");
-  bindtextdomain (PACKAGE, LOCALEDIR);
-  textdomain (PACKAGE);
-
+  obstack_init (&string_stk);
+  
   switch (getopt_long (argc, argv, "", long_opts, NULL))
     {
     default:
@@ -564,6 +603,7 @@ main (int argc, char **argv)
       usage (EXIT_SUCCESS);
 
     case 'v':
+      i18n_setup ();
       version_etc (stdout, "rmt", PACKAGE_NAME, PACKAGE_VERSION,
 		   "John Gilmore", "Jay Fenlason", (char *) NULL);
       close_stdout ();
@@ -624,7 +664,7 @@ main (int argc, char **argv)
 	  break;
 
 	default:
-	  DEBUG1 (_("rmtd: Garbage command %c\n"), command);
+	  DEBUG1 ("rmtd: Garbage command %c\n", command);
 	  report_error_message (N_("Garbage command"));
 	  return EXIT_FAILURE;	/* exit status used to be 3 */
 	}
