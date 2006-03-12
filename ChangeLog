@@ -1,3 +1,15 @@
+2006-03-11  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* rmt/rmt.c (STRING_SIZE): Now UINTMAX_STRSIZE_BOUND + 1, since
+	bounded strings are used only for integers now.
+	(get_string): Use a prototype.  Remove unused local var 'counter'.
+	(get_long): Arg is now char const *, not char *.
+	Check for integer overflow in arg.
+	Check for empty arg.
+	(open_device): Use get_string for oflags, too, since the existing
+	limits were uncomfortably close to being too small.
+	Don't assume free_string does not affect errno.
+
 2006-03-12  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* gnulib.modules: Add obstack

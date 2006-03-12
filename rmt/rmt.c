@@ -51,8 +51,9 @@
 # define EXIT_SUCCESS 0
 #endif
 
-/* Maximum size of a string from the requesting program.  */
-#define	STRING_SIZE 64
+/* Maximum size of a string from the requesting program.
+   It must hold enough for any integer, possibly with a sign.  */
+#define	STRING_SIZE (UINTMAX_STRSIZE_BOUND + 1)
 
 /* Name of executing program.  */
 const char *program_name;
@@ -102,11 +103,9 @@ report_numbered_error (int num)
 }
 
 static char *
-get_string ()
+get_string (void)
 {
-  size_t counter;
-  
-  for (counter = 0; ; counter++)
+  for (;;)
     {
       char c;
       if (safe_read (STDIN_FILENO, &c, 1) != 1)
@@ -114,7 +113,7 @@ get_string ()
 
       if (c == '\n')
 	break;
-      
+
       obstack_1grow (&string_stk, c);
     }
   obstack_1grow (&string_stk, 0);
@@ -146,12 +145,19 @@ get_string_n (char *string)
   string[counter] = '\0';
 }
 
-static long
-get_long (char *string)
+static long int
+get_long (char const *string)
 {
   char *p;
-  long n = strtol (string, &p, 10);
-  if (*p)
+  long int n;
+  errno = 0;
+  n = strtol (string, &p, 10);
+  if (errno == ERANGE)
+    {
+      report_numbered_error (errno);
+      exit (EXIT_FAILURE);
+    }
+  if (!*string || *p)
     {
       report_error_message (N_("Number syntax error"));
       exit (EXIT_FAILURE);
@@ -315,7 +321,7 @@ Manipulate a tape drive, accepting commands from a remote process.\n\
 }
 
 static void
-respond (long status)
+respond (long int status)
 {
   DEBUG1 ("rmtd: A %ld\n", status);
 
@@ -328,22 +334,21 @@ respond (long status)
 static void
 open_device (void)
 {
-  char *device_string;
-  char oflag_string[STRING_SIZE];
+  char *device_string = get_string ();
+  char *oflag_string = get_string ();
 
-  device_string = get_string ();
-  get_string_n (oflag_string);
   DEBUG2 ("rmtd: O %s %s\n", device_string, oflag_string);
 
   if (tape >= 0)
     close (tape);
 
   tape = open (device_string, decode_oflag (oflag_string), MODE_RW);
-  free_string (device_string);
   if (tape < 0)
     report_numbered_error (errno);
   else
     respond (0);
+  free_string (device_string);
+  free_string (oflag_string);
 }
 
 static void
@@ -495,7 +500,7 @@ read_device (void)
     report_numbered_error (errno);
   else
     {
-      sprintf (reply_buffer, "A%lu\n", (unsigned long) status);
+      sprintf (reply_buffer, "A%lu\n", (unsigned long int) status);
       full_write (STDOUT_FILENO, reply_buffer, strlen (reply_buffer));
       full_write (STDOUT_FILENO, record_buffer, status);
     }
@@ -593,7 +598,7 @@ main (int argc, char **argv)
   program_name = argv[0];
 
   obstack_init (&string_stk);
-  
+
   switch (getopt_long (argc, argv, "", long_opts, NULL))
     {
     default:
