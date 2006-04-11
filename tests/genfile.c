@@ -445,7 +445,7 @@ print_stat (const char *name)
     }
 
   fmt = strdup (stat_format);
-  for (p = strtok (fmt, ","); p; p = strtok (NULL, ","))
+  for (p = strtok (fmt, ","); p; )
     {
       if (memcmp (p, "st_", 3) == 0)
 	p += 3;
@@ -455,8 +455,30 @@ print_stat (const char *name)
 	printf ("%lu", (unsigned long) st.st_dev);
       else if (strcmp (p, "ino") == 0)
 	printf ("%lu", (unsigned long) st.st_ino);
-      else if (strcmp (p, "mode") == 0)
-	printf ("%0o", st.st_mode);
+      else if (strncmp (p, "mode", 4) == 0)
+	{
+	  mode_t mask;
+
+	  if (ispunct (p[4]))
+	    {
+	      char *q;
+	      
+	      mask = strtoul (p + 5, &q, 8);
+	      if (*q)
+		{
+		  printf ("\n");
+		  error (EXIT_FAILURE, 0, _("incorrect mask (near `%s')"), q);
+		}
+	    }
+	  else if (!p[4])
+	    mask = ~0;
+	  else
+	    {
+	      printf ("\n");
+	      error (EXIT_FAILURE, 0, _("Unknown field `%s'"), p);
+	    }
+	  printf ("%0o", st.st_mode & mask);
+	}
       else if (strcmp (p, "nlink") == 0)
 	printf ("%lu", (unsigned long) st.st_nlink);
       else if (strcmp (p, "uid") == 0)
@@ -486,7 +508,9 @@ print_stat (const char *name)
 	  printf ("\n");
 	  error (EXIT_FAILURE, 0, _("Unknown field `%s'"), p);
 	}
-      printf (" ");
+      p = strtok (NULL, ",");
+      if (p)
+	printf (" ");
     }
   printf ("\n");
   free (fmt);
