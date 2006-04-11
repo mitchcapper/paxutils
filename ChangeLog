@@ -4,6 +4,8 @@
 	followed by a punctuation sign and a number, specifying the mask
 	to be applied to the mode before printing.
 
+	* doc/genfile.texi: Update
+
 2006-03-11  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* rmt/rmt.c (STRING_SIZE): Now UINTMAX_STRSIZE_BOUND + 1, since
