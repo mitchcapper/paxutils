@@ -1,3 +1,9 @@
+2006-04-11  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* tests/genfile.c (print_stat): mode keyword can be optionally
+	followed by a punctuation sign and a number, specifying the mask
+	to be applied to the mode before printing.
+
 2006-03-11  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* rmt/rmt.c (STRING_SIZE): Now UINTMAX_STRSIZE_BOUND + 1, since
