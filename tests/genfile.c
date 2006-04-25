@@ -126,6 +126,7 @@ static struct argp_option options[] = {
   {"sparse", 's', NULL, 0,
    N_("Generate sparse file. Rest of the command line gives the file map."),
    GRP+1 },
+
 #undef GRP
 #define GRP 10
   {NULL, 0, NULL, 0,
@@ -135,6 +136,7 @@ static struct argp_option options[] = {
    N_("Print contents of struct stat for each given file. Default FORMAT is: ")
    DEFAULT_STAT_FORMAT,
    GRP+1 },
+
 #undef GRP
 #define GRP 20
   {NULL, 0, NULL, 0,
@@ -213,6 +215,29 @@ get_size (const char *str, int allow_zero)
   if (n < 0 || (!allow_zero && n == 0) || (*p && xlat_suffix (&n, p)))
     error (EXIT_FAILURE, 0, _("Invalid size: %s"), str);
   return n;
+}
+
+#define IS_SPARSE_FILE(st) ((st).st_size > (st).st_blocks * (st).st_blksize)
+
+void
+verify_file ()
+{
+  if (file_name)
+    {
+      struct stat st;
+
+      if (stat (file_name, &st))
+	error (0, errno, _("stat(%s) failed"), file_name);
+  
+      if (st.st_size != file_length)
+	{
+	  printf ("%lu %lu\n", (unsigned long)st.st_size , (unsigned long)file_length);
+	  exit (1);
+	}
+  
+      if (mode == mode_sparse && !IS_SPARSE_FILE (st))
+	exit (1);
+    }
 }
 
 struct action
@@ -378,14 +403,14 @@ mkhole (int fd, off_t displ)
 static void
 mksparse (int fd, off_t displ, char *marks)
 {
+  if (lseek (fd, displ, SEEK_CUR) == -1)
+    error (EXIT_FAILURE, errno, "lseek");
+  
   for (; *marks; marks++)
     {
       memset (buffer, *marks, block_size);
       if (write (fd, buffer, block_size) != block_size)
 	error (EXIT_FAILURE, errno, "write");
-
-      if (lseek (fd, displ, SEEK_CUR) == -1)
-	error (EXIT_FAILURE, errno, "lseek");
     }
 }
 
@@ -394,7 +419,7 @@ generate_sparse_file (int argc, char **argv)
 {
   int i;
   int fd;
-
+  
   if (!file_name)
     error (EXIT_FAILURE, 0,
 	   _("cannot generate sparse files on standard output, use --file option"));
@@ -404,17 +429,23 @@ generate_sparse_file (int argc, char **argv)
 
   buffer = xmalloc (block_size);
 
+  file_length = 0;
+  
   for (i = 0; i < argc; i += 2)
     {
       off_t displ = get_size (argv[i], 1);
-
+      file_length += displ;
+      
       if (i == argc-1)
 	{
 	  mkhole (fd, displ);
 	  break;
 	}
       else
-	mksparse (fd, displ, argv[i+1]);
+	{
+	  file_length += block_size * strlen (argv[i+1]);
+	  mksparse (fd, displ, argv[i+1]);
+	}
     }
 
   close (fd);
@@ -503,6 +534,8 @@ print_stat (const char *name)
 	printf ("%lu", (unsigned long) st.st_ctime);
       else if (strcmp (p, "ctimeH") == 0)
 	print_time (st.st_ctime);
+      else if (strcmp (p, "sparse") == 0)
+	printf ("%d", IS_SPARSE_FILE (st));
       else
 	{
 	  printf ("\n");
@@ -741,10 +774,12 @@ main (int argc, char **argv)
 
     case mode_sparse:
       generate_sparse_file (argc, argv);
+      verify_file ();
       break;
 
     case mode_generate:
       generate_simple_file (argc, argv);
+      verify_file ();
       break;
 
     case mode_exec:
