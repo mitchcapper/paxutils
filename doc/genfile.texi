@@ -1,5 +1,5 @@
 @c This is part of the paxutils manual.
-@c Copyright (C) 2005 Free Software Foundation, Inc.
+@c Copyright (C) 2005, 2006 Free Software Foundation, Inc.
 @c Written by Sergey Poznyakoff
 @c This file is distributed under GFDL 1.1 or any later version
 @c published by the Free Software Foundation.
@@ -72,6 +72,10 @@ name to use. Currently two patterns are implemented:
     Fills the file with zeroes.
 @end table
 
+    If no file name was given, the program exits with the code
+@code{0}.  Otherwise, it exits with @code{0} only if it was able to
+create a file of the specified length.
+    
 @cindex Sparse files, creating using @command{genfile}
 @cindex @command{genfile}, creating sparse files
     Special option @option{--sparse} (@option{-s}) instructs
@@ -85,10 +89,11 @@ the rest of the command line specifies a so-called @dfn{file map}.
 
     The file map consists of any number of @dfn{fragment
 descriptors}. Each descriptor is composed of two values: a number,
-specifying fragment offset in the file, and @dfn{contents string},
-i.e. a string of characters, specifying the pattern to fill the
-fragment with. File offset can be suffixed with the following
-quantifiers:
+specifying fragment offset from the end of the previous fragment or,
+for the very first fragment, from the beginning of the file, and
+@dfn{contents string}, i.e. a string of characters, specifying the
+pattern to fill the fragment with. File offset can be suffixed with
+the following quantifiers:
 
 @table @samp
 @item k
@@ -120,18 +125,21 @@ genfile --sparse --file sparsefile 0 ABCD 1M EFGHI 2000K
 @end smallexample
 
 @noindent
-It will create a 2048000-bytes long file of the following structure:
+It will create 3101184-bytes long file of the following structure:
 
 @multitable @columnfractions .35 .20 .45
 @item Offset  @tab Length       @tab Contents
 @item 0       @tab 4*512=2048   @tab Four 512-byte blocks, filled with
 letters @samp{A}, @samp{B}, @samp{C} and @samp{D}.
 @item 2048    @tab 1046528      @tab Zero bytes 
-@item 1048576 @tab 5*512=2560   @tab Five blocks, filled with letters
+@item 1050624 @tab 5*512=2560   @tab Five blocks, filled with letters
 @samp{E}, @samp{F}, @samp{G}, @samp{H}, @samp{I}.
-@item 1051136 @tab 996864       @tab Zero bytes
+@item 1053184  @tab 2048000     @tab Zero bytes
 @end multitable
 
+    The exit code of @command{genfile --status} command is @code{0}
+only if created file is actually sparse.
+    
 @node Status Mode
 @appendixsec Status Mode
 
@@ -197,6 +205,9 @@ use any punctuation caracter in place of @samp{.}.
 @item ctime
 @itemx st_ctime
     Time of last status change
+
+@item sparse
+    A boolean value indicating whether the file is @samp{sparse}.     
 @end table
 
     Modification times are displayed in @acronym{UTC} as
