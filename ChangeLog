@@ -1,3 +1,10 @@
+2006-04-25  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* doc/genfile.texi: Document exit codes in create mode. Fix file
+	size calculation in the example of genfile --sparse.
+	* tests/genfile.c: Behave as described in the docs in sparse file
+	creation mode. Verify created file, unless it goes to stdout.
+
 2006-04-11  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* tests/genfile.c (print_stat): mode keyword can be optionally
