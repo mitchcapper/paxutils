@@ -50,12 +50,39 @@ standard output, this can be changed using @option{--file}
 are equivalent:
 
 @smallexample
+@group
 genfile --length 100 > outfile
 genfile --length 100 --file outfile
+@end group
 @end smallexample
 
     If @option{--length} is not given, @command{genfile} will
 generate an empty (zero-length) file.
+
+@cindex @command{genfile}, reading a list of file names
+    You can instruct @command{genfile} to create several files at one
+go, by giving it @option{--files-from} (@option{-T}) option followed
+by a name of file containing a list of file names. Using dash
+(@samp{-}) instead of the file name causes @command{genfile} to read
+file list from the standard input. For example:
+
+@smallexample
+@group
+# Read file names from file @file{file.list}
+genfile --files-from file.list
+# Read file names from standard input
+genfile --files-from -
+@end group
+@end smallexample
+
+@cindex File lists separated by NUL characters
+    The list file is supposed to contain one file name per line. To
+use file lists separated by ASCII NUL character, use @option{--null}
+(@option{-0}) command line option:
+
+@smallexample
+genfile --null --files-from file.list
+@end smallexample
 
 @cindex pattern, @command{genfile}
     The default data pattern for filling the generated file consists
