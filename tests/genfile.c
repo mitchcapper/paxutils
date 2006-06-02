@@ -32,6 +32,9 @@
 #include <setenv.h>
 #include <utimens.h>
 #include <inttostr.h>
+#define obstack_chunk_alloc malloc
+#define obstack_chunk_free free
+#include <obstack.h>
 
 #ifndef EXIT_SUCCESS
 # define EXIT_SUCCESS 0
@@ -55,6 +58,10 @@ const char *program_name;
 
 /* Name of file to generate */
 static char *file_name;
+
+/* Name of the file-list file: */
+static char *files_from;
+static char filename_terminator = '\n';
 
 /* Length of file to generate.  */
 static off_t file_length = 0;
@@ -118,6 +125,10 @@ static struct argp_option options[] = {
    N_("Create file of the given SIZE"), GRP+1 },
   {"file", 'f', N_("NAME"), 0,
    N_("Write to file NAME, instead of standard output"), GRP+1},
+  {"files-from", 'T', N_("FILE"), 0,
+   N_("Read file names from FILE"), GRP+1},
+  {"null", '0', NULL, 0,
+   N_("-T reads null-terminated names"), GRP+1},
   {"pattern", 'p', N_("PATTERN"), 0,
    N_("Fill the file with the given PATTERN. PATTERN is 'default' or 'zeros'"),
    GRP+1 },
@@ -220,7 +231,7 @@ get_size (const char *str, int allow_zero)
 #define IS_SPARSE_FILE(st) ((st).st_size > (st).st_blocks * (st).st_blksize)
 
 void
-verify_file ()
+verify_file (char *file_name)
 {
   if (file_name)
     {
@@ -272,6 +283,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
 {
   switch (key)
     {
+    case '0':
+      filename_terminator = 0;
+      break;
+      
     case 'f':
       file_name = arg;
       break;
@@ -303,6 +318,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
       argcv_get (arg, "", NULL, &exec_argc, &exec_argv);
       break;
 
+    case 'T':
+      files_from = arg;
+      break;
+      
     case OPT_CHECKPOINT:
       {
 	char *p;
@@ -367,19 +386,16 @@ fill (FILE *fp, off_t length, enum pattern pattern)
 
 /* Generate Mode: usual files */
 static void
-generate_simple_file (int argc, char **argv)
+generate_simple_file (char *filename)
 {
   int i;
   FILE *fp;
 
-  if (argc)
-    error (EXIT_FAILURE, 0, _("too many arguments"));
-
-  if (file_name)
+  if (filename)
     {
-      fp = fopen (file_name, "w");
+      fp = fopen (filename, "w");
       if (!fp)
-	error (EXIT_FAILURE, 0, _("cannot open `%s'"), file_name);
+	error (EXIT_FAILURE, 0, _("cannot open `%s'"), filename);
     }
   else
     fp = stdout;
@@ -389,6 +405,47 @@ generate_simple_file (int argc, char **argv)
   fclose (fp);
 }
 
+/* A simplified version of the same function from tar */
+int
+read_name_from_file (FILE *fp, struct obstack *stk)
+{
+  int c;
+  size_t counter = 0;
+
+  for (c = getc (fp); c != EOF && c != filename_terminator; c = getc (fp))
+    {
+      if (c == 0)
+	error (EXIT_FAILURE, 0, _("file name contains null character"));
+      obstack_1grow (stk, c);
+      counter++;
+    }
+
+  obstack_1grow (stk, 0);
+
+  return (counter == 0 && c == EOF);
+}
+
+void
+generate_files_from_list ()
+{
+  FILE *fp = strcmp (files_from, "-") ? fopen (files_from, "r") : stdin;
+  struct obstack stk;
+  
+  if (!fp)
+    error (EXIT_FAILURE, errno, _("cannot open `%s'"), files_from);
+
+  obstack_init (&stk);
+  while (!read_name_from_file (fp, &stk))
+    {
+      char *name = obstack_finish (&stk);
+      generate_simple_file (name);
+      verify_file (name);
+      obstack_free (&stk, name);
+    }
+  fclose (fp);
+  obstack_free (&stk, NULL);
+}
+  
 
 /* Generate Mode: sparse files */
 
@@ -774,12 +831,19 @@ main (int argc, char **argv)
 
     case mode_sparse:
       generate_sparse_file (argc, argv);
-      verify_file ();
+      verify_file (file_name);
       break;
 
     case mode_generate:
-      generate_simple_file (argc, argv);
-      verify_file ();
+      if (argc)
+	error (EXIT_FAILURE, 0, _("too many arguments"));
+      if (files_from)
+	generate_files_from_list ();
+      else
+	{
+	  generate_simple_file (file_name);
+	  verify_file (file_name);
+	}
       break;
 
     case mode_exec:
