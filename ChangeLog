@@ -1,3 +1,9 @@
+2006-06-02  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* tests/genfile.c: New options --files-from and --null (same as in
+	tar).
+	* doc/genfile.texi: Document --files-from and --null options
+
 2006-04-25  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* doc/genfile.texi: Document exit codes in create mode. Fix file
