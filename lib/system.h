@@ -386,8 +386,12 @@ extern int errno;
 #endif
 
 #ifndef ST_NBLOCKSIZE
-#define ST_NBLOCKSIZE 512
+# define ST_NBLOCKSIZE 512
 #endif
+
+#define ST_IS_SPARSE(st)                                  \
+  (ST_NBLOCKS (st)                                        \
+    < ((st).st_size / ST_NBLOCKSIZE + ((st).st_size % ST_NBLOCKSIZE != 0)))
 
 /* Declare standard functions.  */
 
