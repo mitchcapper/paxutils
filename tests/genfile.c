@@ -228,8 +228,6 @@ get_size (const char *str, int allow_zero)
   return n;
 }
 
-#define IS_SPARSE_FILE(st) ((st).st_size > (st).st_blocks * (st).st_blksize)
-
 void
 verify_file (char *file_name)
 {
@@ -246,7 +244,7 @@ verify_file (char *file_name)
 	  exit (1);
 	}
   
-      if (mode == mode_sparse && !IS_SPARSE_FILE (st))
+      if (mode == mode_sparse && !ST_IS_SPARSE (st))
 	exit (1);
     }
 }
@@ -592,7 +590,7 @@ print_stat (const char *name)
       else if (strcmp (p, "ctimeH") == 0)
 	print_time (st.st_ctime);
       else if (strcmp (p, "sparse") == 0)
-	printf ("%d", IS_SPARSE_FILE (st));
+	printf ("%d", ST_IS_SPARSE (st));
       else
 	{
 	  printf ("\n");
