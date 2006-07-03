@@ -191,8 +191,10 @@ static char const * const pattern_args[] = { "default", "zeros", 0 };
 static enum pattern const pattern_types[] = {DEFAULT_PATTERN, ZEROS_PATTERN};
 
 static int
-xlat_suffix (off_t *vp, char *p)
+xlat_suffix (off_t *vp, const char *p)
 {
+  off_t val = *vp;
+  
   if (p[1])
     return 1;
   switch (p[0])
@@ -213,19 +215,33 @@ xlat_suffix (off_t *vp, char *p)
     default:
       return 1;
     }
-  return 0;
+  return *vp <= val;
 }
 
 static off_t
 get_size (const char *str, int allow_zero)
 {
-  char *p;
-  off_t n;
+  const char *p;
+  off_t v = 0;
 
-  n = strtoul (str, &p, 0);
-  if (n < 0 || (!allow_zero && n == 0) || (*p && xlat_suffix (&n, p)))
-    error (EXIT_FAILURE, 0, _("Invalid size: %s"), str);
-  return n;
+  for (p = str; *p; p++)
+    {
+      int digit = *p - '0';
+      off_t x = v * 10;
+      if (9 < (unsigned) digit)
+	{
+	  if (xlat_suffix (&v, p))
+	    error (EXIT_FAILURE, 0, _("Invalid size: %s"), str);
+	  else
+	    break;
+	}
+      else if (x / 10 != v)
+	error (EXIT_FAILURE, 0, _("Number out of allowed range: %s"), str);
+      v = x + digit;
+      if (v < 0)
+	error (EXIT_FAILURE, 0, _("Negative size: %s"), str);
+    }
+  return v;
 }
 
 void
