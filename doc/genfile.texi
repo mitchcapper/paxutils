@@ -118,7 +118,7 @@ the rest of the command line specifies a so-called @dfn{file map}.
 descriptors}. Each descriptor is composed of two values: a number,
 specifying fragment offset from the end of the previous fragment or,
 for the very first fragment, from the beginning of the file, and
-@dfn{contents string}, i.e. a string of characters, specifying the
+@dfn{contents string}, i.e., a string of characters, specifying the
 pattern to fill the fragment with. File offset can be suffixed with
 the following quantifiers:
 
@@ -195,7 +195,7 @@ as in stat(1)??}:
     File mode in octal.  Optional @var{number} specifies octal mask to
 be applied to the mode before outputting.  For example, @code{--stat
 mode.777} will preserve lower nine bits of it.  Notice, that you can
-use any punctuation caracter in place of @samp{.}.
+use any punctuation character in place of @samp{.}.
     
 @item nlink
 @itemx st_nlink
@@ -267,7 +267,7 @@ the command line to be executed. The actual command line is
 constructed by inserting @option{--checkpoint} option between the
 command name and its first argument (if any). Due to this, the
 argument to @option{--run} may not use traditional @command{tar}
-option syntax, i.e. the following is wrong: 
+option syntax, i.e., the following is wrong: 
 
 @smallexample
 # Wrong!
