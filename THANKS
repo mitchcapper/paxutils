@@ -1,7 +1,8 @@
 GNU paxutils THANKS file
 
-Paul Eggert		eggert@twinsun.com
 François Pinard		pinard@iro.umontreal.ca
+Paul Eggert		eggert@twinsun.com
+Ralf Wildenhues         Ralf.Wildenhues@gmx.de
 
 
 ;;;; Local variables:
