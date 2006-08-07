@@ -10,7 +10,7 @@ AC_DEFUN([PU_SYSTEM],[
 
   AC_CHECK_HEADERS_ONCE([string.h memory.h fcntl.h sys/wait.h \
  sys/gentape.h sys/tape.h sys/device.h sys/param.h sys/tprintf.h sys/mtio.h \
- sgtty.h sys/io/trioctl.h inttypes.h locale.h])
+ sgtty.h sys/io/trioctl.h locale.h])
 
   AC_CHECK_HEADERS([sys/buf.h], [], [],
    [#if HAVE_SYS_PARAM_H
@@ -24,5 +24,6 @@ AC_DEFUN([PU_SYSTEM],[
   AC_STRUCT_ST_BLKSIZE
 
   AC_CHECK_FUNCS_ONCE(lstat mkfifo setlocale)
-  AC_REQUIRE([gl_AC_TYPE_UINTMAX_T])
+  AC_REQUIRE([gl_INTTYPES_H])
+  AC_REQUIRE([gl_STDINT_H])
 ])

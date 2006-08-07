@@ -421,16 +421,7 @@ char *getenv ();
 # define MB_LEN_MAX 1
 #endif
 
-#if HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
-
-#if !HAVE_DECL_STRTOIMAX && !defined strtoimax
-intmax_t strtoimax ();
-#endif
-#if !HAVE_DECL_STRTOUMAX && !defined strtoumax
-uintmax_t strtoumax ();
-#endif
+#include <inttypes.h>
 
 #include <intprops.h>
 

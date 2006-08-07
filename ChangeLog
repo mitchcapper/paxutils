@@ -1,3 +1,15 @@
+2006-08-07  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* lib/system.h: Include <inttypes.h> unconditionally.
+	The latest gnulib lets us do this.
+	* m4/system.m4 (PU_SYSTEM): Don't check for inttypes.h
+	Don't require gl_AC_TYPE_UINTMAX_T.
+	Require gl_INTTYPES_H, gl_STDINT_H.
+
+	* tests/genfile.c (reg_action): Return void, not int.
+	(generate_simple_file, exec_command): Remove unused var.
+	(print_stat): Avoid GCC warning about uninitialized var.
+
 2006-07-09  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* THANKS: Add Ralf Wildenhues
@@ -19,7 +31,7 @@
 
 	* paxlib/exit.c: Initialize the variable to avoid bogus errors
 	when linking on Darwin. Reported by EXCOFFIER, Denis
-	<denis.excoffier@airbus.com>. 
+	<denis.excoffier@airbus.com>.
 
 2006-06-02  Sergey Poznyakoff  <gray@gnu.org.ua>
 
