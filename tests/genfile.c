@@ -194,7 +194,7 @@ static int
 xlat_suffix (off_t *vp, const char *p)
 {
   off_t val = *vp;
-  
+
   if (p[1])
     return 1;
   switch (p[0])
@@ -253,13 +253,13 @@ verify_file (char *file_name)
 
       if (stat (file_name, &st))
 	error (0, errno, _("stat(%s) failed"), file_name);
-  
+
       if (st.st_size != file_length)
 	{
 	  printf ("%lu %lu\n", (unsigned long)st.st_size , (unsigned long)file_length);
 	  exit (1);
 	}
-  
+
       if (mode == mode_sparse && !ST_IS_SPARSE (st))
 	exit (1);
     }
@@ -278,7 +278,7 @@ struct action
 
 static struct action *action_list;
 
-int
+void
 reg_action (int action, char *arg)
 {
   struct action *act = xmalloc (sizeof (*act));
@@ -300,7 +300,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case '0':
       filename_terminator = 0;
       break;
-      
+
     case 'f':
       file_name = arg;
       break;
@@ -335,7 +335,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case 'T':
       files_from = arg;
       break;
-      
+
     case OPT_CHECKPOINT:
       {
 	char *p;
@@ -402,7 +402,6 @@ fill (FILE *fp, off_t length, enum pattern pattern)
 static void
 generate_simple_file (char *filename)
 {
-  int i;
   FILE *fp;
 
   if (filename)
@@ -444,7 +443,7 @@ generate_files_from_list ()
 {
   FILE *fp = strcmp (files_from, "-") ? fopen (files_from, "r") : stdin;
   struct obstack stk;
-  
+
   if (!fp)
     error (EXIT_FAILURE, errno, _("cannot open `%s'"), files_from);
 
@@ -459,7 +458,7 @@ generate_files_from_list ()
   fclose (fp);
   obstack_free (&stk, NULL);
 }
-  
+
 
 /* Generate Mode: sparse files */
 
@@ -476,7 +475,7 @@ mksparse (int fd, off_t displ, char *marks)
 {
   if (lseek (fd, displ, SEEK_CUR) == -1)
     error (EXIT_FAILURE, errno, "lseek");
-  
+
   for (; *marks; marks++)
     {
       memset (buffer, *marks, block_size);
@@ -490,7 +489,7 @@ generate_sparse_file (int argc, char **argv)
 {
   int i;
   int fd;
-  
+
   if (!file_name)
     error (EXIT_FAILURE, 0,
 	   _("cannot generate sparse files on standard output, use --file option"));
@@ -501,12 +500,12 @@ generate_sparse_file (int argc, char **argv)
   buffer = xmalloc (block_size);
 
   file_length = 0;
-  
+
   for (i = 0; i < argc; i += 2)
     {
       off_t displ = get_size (argv[i], 1);
       file_length += displ;
-      
+
       if (i == argc-1)
 	{
 	  mkhole (fd, displ);
@@ -559,12 +558,12 @@ print_stat (const char *name)
 	printf ("%lu", (unsigned long) st.st_ino);
       else if (strncmp (p, "mode", 4) == 0)
 	{
-	  mode_t mask;
+	  mode_t mask = ~0;
 
 	  if (ispunct (p[4]))
 	    {
 	      char *q;
-	      
+
 	      mask = strtoul (p + 5, &q, 8);
 	      if (*q)
 		{
@@ -572,9 +571,7 @@ print_stat (const char *name)
 		  error (EXIT_FAILURE, 0, _("incorrect mask (near `%s')"), q);
 		}
 	    }
-	  else if (!p[4])
-	    mask = ~0;
-	  else
+	  else if (p[4])
 	    {
 	      printf ("\n");
 	      error (EXIT_FAILURE, 0, _("Unknown field `%s'"), p);
@@ -710,7 +707,7 @@ process_checkpoint (size_t n)
 void
 exec_command (void)
 {
-  int i, status;
+  int status;
   pid_t pid;
   int fd[2];
   char *p;
@@ -822,7 +819,7 @@ main (int argc, char **argv)
   setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
-  
+
   get_date (&touch_time, "now", NULL);
 
   /* Decode command options.  */
