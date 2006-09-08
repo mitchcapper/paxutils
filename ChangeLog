@@ -1,3 +1,7 @@
+2006-09-08  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* tests/genfile.c (exec_command): Fix memory reallocation.
+
 2006-08-07  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* lib/system.h: Include <inttypes.h> unconditionally.
