@@ -718,8 +718,8 @@ exec_command (void)
      FIXME: This assumes that exec_argv does not use traditional tar options
      (without dash) */
   exec_argc++;
-  exec_argv = xrealloc (exec_argv, exec_argc * sizeof (*exec_argv));
-  memmove (exec_argv+2, exec_argv+1, (exec_argc-1)*sizeof (*exec_argv));
+  exec_argv = xrealloc (exec_argv, (exec_argc + 1) * sizeof (*exec_argv));
+  memmove (exec_argv+2, exec_argv+1, (exec_argc - 1) * sizeof (*exec_argv));
   exec_argv[1] = "--checkpoint";
 
 #ifdef SIGCHLD
