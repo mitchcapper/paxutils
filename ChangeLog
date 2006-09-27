@@ -1,6 +1,5 @@
 2006-09-27  Sergey Poznyakoff  <gray@gnu.org.ua>
 
-	* rmt/rmt.c: Use program_invocation_name instead of program_name.
 	* tests/genfile.c (exec_command): Add extra spaces.
 
 2006-09-08  Sergey Poznyakoff  <gray@gnu.org.ua>

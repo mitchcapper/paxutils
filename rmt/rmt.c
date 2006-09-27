@@ -55,11 +55,7 @@
    It must hold enough for any integer, possibly with a sign.  */
 #define	STRING_SIZE (UINTMAX_STRSIZE_BOUND + 1)
 
-#ifdef HAVE_DECL_PROGRAM_INVOCATION_NAME
-# define program_name program_invocation_name
-#else
-extern char *program_name;
-#endif
+const char *program_name;
 
 /* File descriptor of the tape device, or negative if none open.  */
 static int tape = -1;
