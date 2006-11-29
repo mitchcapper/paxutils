@@ -34,7 +34,7 @@
 #include "system.h"
 #include "system-ioctl.h"
 #include <closeout.h>
-#include <localedir.h>
+#include <configmake.h>
 #include <safe-read.h>
 #include <full-write.h>
 #include <version-etc.h>

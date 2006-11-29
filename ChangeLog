@@ -1,3 +1,13 @@
+2006-11-29  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* lib/rtapelib.c: Include <rmt-command.h> rather than <localedir.h>,
+	to accommodate recent changes to gnulib and tar.
+	* rmt/rmt.c: Likewise.
+	* rmt/Makefile.am (rmt.o): Depend on configmake.h, not localedir.h.
+	* m4/system.m4 (PU_SUSTEM): Put AC_REQUIRE wrappers around
+	AC_HEADER_STDC, etc.  This avoids a warning from automake,
+	with the latest gnulib.
+
 2006-09-27  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* tests/genfile.c (exec_command): Add extra spaces.
