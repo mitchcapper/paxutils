@@ -65,6 +65,7 @@ static char filename_terminator = '\n';
 
 /* Length of file to generate.  */
 static off_t file_length = 0;
+static off_t seek_offset = 0;
 
 /* Pattern to generate.  */
 static enum pattern pattern = DEFAULT_PATTERN;
@@ -116,6 +117,7 @@ static char doc[] = N_("genfile manipulates data files for GNU paxutils test sui
 #define OPT_EXEC       260
 #define OPT_DATE       261
 #define OPT_VERBOSE    262
+#define OPT_SEEK       263
 
 static struct argp_option options[] = {
 #define GRP 0
@@ -136,6 +138,9 @@ static struct argp_option options[] = {
    N_("Size of a block for sparse file"), GRP+1},
   {"sparse", 's', NULL, 0,
    N_("Generate sparse file. Rest of the command line gives the file map."),
+   GRP+1 },
+  {"seek", OPT_SEEK, N_("OFFSET"), 0,
+   N_("Seek to the given offset before writing data"),
    GRP+1 },
 
 #undef GRP
@@ -254,7 +259,7 @@ verify_file (char *file_name)
       if (stat (file_name, &st))
 	error (0, errno, _("stat(%s) failed"), file_name);
 
-      if (st.st_size != file_length)
+      if (st.st_size != file_length + seek_offset)
 	{
 	  printf ("%lu %lu\n", (unsigned long)st.st_size , (unsigned long)file_length);
 	  exit (1);
@@ -336,6 +341,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
       files_from = arg;
       break;
 
+    case OPT_SEEK:
+      seek_offset = get_size (arg, 0);
+      break;
+      
     case OPT_CHECKPOINT:
       {
 	char *p;
@@ -406,13 +415,16 @@ generate_simple_file (char *filename)
 
   if (filename)
     {
-      fp = fopen (filename, "w");
+      fp = fopen (filename, seek_offset ? "r+" : "w");
       if (!fp)
 	error (EXIT_FAILURE, 0, _("cannot open `%s'"), filename);
     }
   else
     fp = stdout;
 
+  if (fseeko (fp, seek_offset, 0))
+    error (EXIT_FAILURE, 0, _("cannot seek: %s"), strerror (errno));
+  
   fill (fp, file_length, pattern);
 
   fclose (fp);
@@ -489,11 +501,14 @@ generate_sparse_file (int argc, char **argv)
 {
   int i;
   int fd;
-
+  int flags = O_CREAT|O_RDWR;
+  
   if (!file_name)
     error (EXIT_FAILURE, 0,
 	   _("cannot generate sparse files on standard output, use --file option"));
-  fd = open (file_name, O_CREAT|O_TRUNC|O_RDWR, 0644);
+  if (!seek_offset)
+    flags |= O_TRUNC;
+  fd = open (file_name, flags, 0644);
   if (fd < 0)
     error (EXIT_FAILURE, 0, _("cannot open `%s'"), file_name);
 
