@@ -59,6 +59,12 @@ genfile --length 100 --file outfile
     If @option{--length} is not given, @command{genfile} will
 generate an empty (zero-length) file.
 
+@cindex @command{genfile}, seeking to a given offset
+    The command line option @option{--seek=@var{N}} istructs @command{genfile}
+to skip the given number of bytes (@var{N}) in the output file before
+writing to it.  It is similar to the @option{seek=@var{N}} of the
+@command{dd} utility.
+
 @cindex @command{genfile}, reading a list of file names
     You can instruct @command{genfile} to create several files at one
 go, by giving it @option{--files-from} (@option{-T}) option followed
