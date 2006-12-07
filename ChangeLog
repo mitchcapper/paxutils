@@ -1,3 +1,11 @@
+2006-12-07  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* doc/genfile.texi (Generate Mode): Document --seek option.
+	* paxlib/error.c (read_fatal_details): Fix wording of the error
+	message.
+	* tests/genfile.c: Implement new option --seek (similar
+	to `dd seek=')
+
 2006-11-29  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* lib/rtapelib.c: Include <rmt-command.h> rather than <localedir.h>,
