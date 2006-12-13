@@ -585,8 +585,8 @@ status_device (void)
 	respond (sizeof operation);
 	full_write (STDOUT_FILENO, (char *) &operation, sizeof operation);
       }
-#endif
   }
+#endif
 }
 
 int

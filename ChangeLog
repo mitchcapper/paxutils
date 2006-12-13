@@ -1,3 +1,8 @@
+2006-12-12  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* rmt/rmt.c (status_device) [!defined MTIOCGET]:
+	Fix bracketing typo.  Problem reported by Yutaka Furubayashi.
+
 2006-12-07  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* doc/genfile.texi (Generate Mode): Document --seek option.
