@@ -1,3 +1,7 @@
+2006-12-18  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* gnulib.modules: Add configmake
+
 2006-12-12  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* rmt/rmt.c (status_device) [!defined MTIOCGET]:
