@@ -419,13 +419,13 @@ generate_simple_file (char *filename)
     {
       fp = fopen (filename, seek_offset ? "rb+" : "wb");
       if (!fp)
-	error (EXIT_FAILURE, 0, _("cannot open `%s'"), filename);
+	error (EXIT_FAILURE, errno, _("cannot open `%s'"), filename);
     }
   else
     fp = stdout;
 
   if (fseeko (fp, seek_offset, 0))
-    error (EXIT_FAILURE, 0, _("cannot seek: %s"), strerror (errno));
+    error (EXIT_FAILURE, errno, "%s", _("cannot seek"));
 
   fill (fp, file_length, pattern);
 
@@ -512,7 +512,7 @@ generate_sparse_file (int argc, char **argv)
     flags |= O_TRUNC;
   fd = open (file_name, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   if (fd < 0)
-    error (EXIT_FAILURE, 0, _("cannot open `%s'"), file_name);
+    error (EXIT_FAILURE, errno, _("cannot open `%s'"), file_name);
 
   buffer = xmalloc (block_size);
 
