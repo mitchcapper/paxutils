@@ -1,3 +1,7 @@
+2007-06-21  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* tests/genfile.c: Print errno status on errors.
+
 2007-06-21  Eric Blake  <ebb9@byu.net>
 
 	Resolve testsuite failures on cygwin.
