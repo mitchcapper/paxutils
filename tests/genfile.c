@@ -1,7 +1,7 @@
 /* Generate a file containing some preset patterns.
    Print statistics for existing files.
 
-   Copyright (C) 1995, 1996, 1997, 2001, 2003, 2004, 2005, 2006
+   Copyright (C) 1995, 1996, 1997, 2001, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
 
    François Pinard <pinard@iro.umontreal.ca>, 1995.
@@ -32,6 +32,8 @@
 #include <setenv.h>
 #include <utimens.h>
 #include <inttostr.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
 #include <obstack.h>
@@ -344,7 +346,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case OPT_SEEK:
       seek_offset = get_size (arg, 0);
       break;
-      
+
     case OPT_CHECKPOINT:
       {
 	char *p;
@@ -415,7 +417,7 @@ generate_simple_file (char *filename)
 
   if (filename)
     {
-      fp = fopen (filename, seek_offset ? "r+" : "w");
+      fp = fopen (filename, seek_offset ? "rb+" : "wb");
       if (!fp)
 	error (EXIT_FAILURE, 0, _("cannot open `%s'"), filename);
     }
@@ -424,7 +426,7 @@ generate_simple_file (char *filename)
 
   if (fseeko (fp, seek_offset, 0))
     error (EXIT_FAILURE, 0, _("cannot seek: %s"), strerror (errno));
-  
+
   fill (fp, file_length, pattern);
 
   fclose (fp);
@@ -453,7 +455,7 @@ read_name_from_file (FILE *fp, struct obstack *stk)
 void
 generate_files_from_list ()
 {
-  FILE *fp = strcmp (files_from, "-") ? fopen (files_from, "r") : stdin;
+  FILE *fp = strcmp (files_from, "-") ? fopen (files_from, "rb") : stdin;
   struct obstack stk;
 
   if (!fp)
@@ -501,14 +503,14 @@ generate_sparse_file (int argc, char **argv)
 {
   int i;
   int fd;
-  int flags = O_CREAT|O_RDWR;
-  
+  int flags = O_CREAT | O_RDWR | O_BINARY;
+
   if (!file_name)
     error (EXIT_FAILURE, 0,
 	   _("cannot generate sparse files on standard output, use --file option"));
   if (!seek_offset)
     flags |= O_TRUNC;
-  fd = open (file_name, flags, 0644);
+  fd = open (file_name, flags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   if (fd < 0)
     error (EXIT_FAILURE, 0, _("cannot open `%s'"), file_name);
 
@@ -657,7 +659,7 @@ exec_checkpoint (struct action *p)
 
     case OPT_APPEND:
       {
-	FILE *fp = fopen (p->name, "a");
+	FILE *fp = fopen (p->name, "ab");
 	if (!fp)
 	  {
 	    error (0, errno, _("cannot open `%s'"), p->name);
@@ -671,7 +673,7 @@ exec_checkpoint (struct action *p)
 
     case OPT_TRUNCATE:
       {
-	int fd = open (p->name, O_RDWR);
+	int fd = open (p->name, O_RDWR | O_BINARY);
 	if (fd == -1)
 	  {
 	    error (0, errno, _("cannot open `%s'"), p->name);
@@ -766,7 +768,7 @@ exec_command (void)
 
   /* Master */
   close (fd[1]);
-  fp = fdopen (fd[0], "r");
+  fp = fdopen (fd[0], "rb");
   if (fp == NULL)
     error (EXIT_FAILURE, errno, "fdopen");
 

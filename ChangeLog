@@ -1,3 +1,11 @@
+2007-06-21  Eric Blake  <ebb9@byu.net>
+
+	Resolve testsuite failures on cygwin.
+	* tests/genfile.c (generate_simple_file): Force binary
+	mode.
+	(generate_files_from_list, generate_sparse_file)
+	(exec_checkpoint, exec_command): Likewise.
+
 2006-12-18  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* gnulib.modules: Add configmake
