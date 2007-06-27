@@ -1,4 +1,4 @@
-2007-06-21  Sergey Poznyakoff  <gray@gnu.org.ua>
+2007-06-21 Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* tests/genfile.c: Print errno status on errors.
 
