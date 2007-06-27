@@ -1,12 +1,12 @@
 /* This file is part of GNU paxutils
 
-   Copyright (C) 2005 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007 Free Software Foundation, Inc.
 
    Written by Sergey Poznyakoff
 
    GNU paxutils is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any later
+   Free Software Foundation; either version 3, or (at your option) any later
    version.
 
    GNU paxutils program is distributed in the hope that it will be useful, but
