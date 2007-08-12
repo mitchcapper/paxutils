@@ -461,7 +461,7 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 	return -1;
 #endif
       }
-    remote_shell_basename = base_name (remote_shell);
+    remote_shell_basename = last_component (remote_shell);
 
     /* Set up the pipes for the `rsh' command, and fork.  */
 
