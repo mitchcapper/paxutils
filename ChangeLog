@@ -1,3 +1,8 @@
+2007-08-12  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* lib/rtapelib.c, paxlib/rtape.c: Use last_component instead of
+	base_name. Patch by Eric Blake.
+
 2007-06-27  Sergey Poznyakoff  <gray@gnu.org.ua>
 
         Relicense under GPLv3
