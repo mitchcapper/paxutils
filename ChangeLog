@@ -1,3 +1,10 @@
+2007-08-17  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* paxlib/names.c (hash_string_insert_prefix): New function
+	(hash_string_insert): Rewrite using hash_string_insert_prefix
+	(safer_name_suffix): Use hash_string_insert_prefix to avoid
+	stack allocation. Bug reported by Dmitry V. Levin;
+
 2007-08-12  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* lib/rtapelib.c, paxlib/rtape.c: Use last_component instead of
