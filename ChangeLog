@@ -1,3 +1,7 @@
+2007-08-19  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* paxlib/names.c (safer_name_suffix): Fix variable type
+
 2007-08-17  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* paxlib/names.c (hash_string_insert_prefix): New function
