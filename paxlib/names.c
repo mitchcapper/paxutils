@@ -146,7 +146,7 @@ safer_name_suffix (char const *file_name, bool link_target,
 
       if (prefix_len)
 	{
-	  const char **prefix;
+	  const char *prefix;
 	  if (hash_string_insert_prefix (&prefix_table[link_target], file_name,
 					 prefix_len, &prefix))
 	    {
