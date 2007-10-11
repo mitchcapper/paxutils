@@ -13,6 +13,7 @@ quote
 quotearg
 safe-read
 stdbool
+strerror
 strtol
 version-etc-fsf
 xalloc

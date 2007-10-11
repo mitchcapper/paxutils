@@ -13,7 +13,6 @@ AC_DEFUN([PU_RMT],[
   AC_SUBST(LIB_SETSOCKOPT)
   LIBS=$pu_save_LIBS
 
-  AC_CHECK_FUNCS_ONCE([strerror])
   enable_rmt() {
     if test $ac_cv_header_sys_mtio_h = yes; then
       AC_CACHE_CHECK(for remote tape header files, pu_cv_header_rmt,
@@ -70,5 +69,3 @@ AC_DEFUN([PU_RMT],[
                        [Define full file name of rmt program.])
   fi
 ])
-
-

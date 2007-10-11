@@ -1,3 +1,10 @@
+2007-10-11  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* gnulib.modules: Add strerror.
+	* configure.ac: Don't test for strerror any more; the gnulib
+	strerror module handles this.
+	* m4/rmt.m4 (PU_RMT): Likewise.
+
 2007-08-19  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* paxlib/names.c (safer_name_suffix): Fix variable type
