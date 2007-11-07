@@ -1,3 +1,7 @@
+2007-11-07  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* gnulib.modules: Add fseeko.
+
 2007-10-11  Paul Eggert  <eggert@cs.ucla.edu>
 
 	* gnulib.modules: Add strerror.
