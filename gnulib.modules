@@ -4,6 +4,7 @@
 closeout
 configmake
 dirname
+fseeko
 full-write
 getdate
 getopt
