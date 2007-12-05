@@ -453,6 +453,13 @@ char *getenv ();
 #define _(msgid) gettext (msgid)
 #define N_(msgid) msgid
 
+#ifdef HAVE_PWD_H
+# include <pwd.h>
+#endif
+#ifdef HAVE_GRP_H
+# include <grp.h>
+#endif
+
 #if MSDOS
 # include <process.h>
 # define SET_BINARY_MODE(arc) setmode(arc, O_BINARY)
@@ -461,8 +468,6 @@ char *getenv ();
 # define TTY_NAME "con"
 # define sys_reset_uid_gid()
 #else
-# include <pwd.h>
-# include <grp.h>
 # define SET_BINARY_MODE(arc)
 # define ERRNO_IS_EACCES 0
 # define TTY_NAME "/dev/tty"

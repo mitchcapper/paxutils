@@ -1,3 +1,11 @@
+2007-12-05  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	Changes needed for cpio mingw build:
+	
+	* lib/system.h: Include pwd.h and grp.h if the corresponding HAVE_
+	preprocessor symbols are defined.
+	* m4/system.m4 (AC_CHECK_HEADERS_ONCE): Add pwd.h and grp.h.
+
 2007-11-07  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	* gnulib.modules: Add fseeko.
