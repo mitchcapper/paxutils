@@ -1,3 +1,7 @@
+2008-02-18  Sergey Poznyakoff  <gray@gnu.org.ua>
+
+	* tests/genfile.c: Remove setenv.h
+
 2007-12-05  Sergey Poznyakoff  <gray@gnu.org.ua>
 
 	Changes needed for cpio mingw build:
