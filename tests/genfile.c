@@ -261,13 +261,11 @@ verify_file (char *file_name)
 	error (0, errno, _("stat(%s) failed"), file_name);
 
       if (st.st_size != file_length + seek_offset)
-	{
-	  printf ("%lu %lu\n", (unsigned long)st.st_size , (unsigned long)file_length);
-	  exit (1);
-	}
+	error (1, 0, _("requested file length %lu, actual %lu"),
+	       (unsigned long)st.st_size, (unsigned long)file_length);
 
       if (mode == mode_sparse && !ST_IS_SPARSE (st))
-	exit (1);
+	error (1, 0, _("created file is not sparse"));
     }
 }
 
