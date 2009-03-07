@@ -1,6 +1,6 @@
 # Configuration for paxutils/lib/system.h.
 
-# Copyright (C) 2005, 2006, 2007 Free Software Foundation, Inc.
+# Copyright (C) 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -24,6 +24,6 @@ AC_DEFUN([PU_SYSTEM],[
   AC_REQUIRE([AC_STRUCT_ST_BLKSIZE])
 
   AC_CHECK_FUNCS_ONCE(lstat mkfifo setlocale)
-  AC_REQUIRE([gl_INTTYPES_H])
+  AC_REQUIRE([gl_INTTOSTR])
   AC_REQUIRE([gl_STDINT_H])
 ])

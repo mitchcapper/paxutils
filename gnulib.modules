@@ -7,7 +7,9 @@ dirname
 fseeko
 full-write
 getdate
+gettext
 getopt
+gitlog-to-changelog
 inttostr
 obstack
 quote

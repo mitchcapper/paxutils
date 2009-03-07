@@ -23,9 +23,9 @@ AC_CONFIG_HEADERS([config.h])
 AC_PREREQ([2.59])
 AM_INIT_AUTOMAKE([1.8 gnits dist-bzip2 dist-shar std-options])
 
-gl_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
 AC_EXEEXT
+gl_EARLY
 AC_PROG_RANLIB
 AC_SYS_LARGEFILE
 AC_ISC_POSIX
@@ -77,10 +77,7 @@ AC_CHECK_TYPE(minor_t, , AC_DEFINE(minor_t, int,
 AC_CHECK_TYPE(dev_t, unsigned)
 AC_CHECK_TYPE(ino_t, unsigned)
 
-gt_TYPE_SSIZE_T
-gl_AC_TYPE_INTMAX_T
-jm_AC_TYPE_UINTMAX_T
-
+gl_INIT
 MU_DEBUG_MODE
 
 # gnulib modules
@@ -239,7 +236,8 @@ fi
 
 
 AC_OUTPUT([Makefile\
-           lib/Makefile\
+           gnu/Makefile\
            paxlib/Makefile\
+	   rmt/Makefile\
            po/Makefile.in\
            paxtest/Makefile])

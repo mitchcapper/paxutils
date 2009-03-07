@@ -1,6 +1,6 @@
 # This file is part of GNU paxutils
 #
-# Copyright (C) 2005, 2007 Free Software Foundation, Inc.
+# Copyright (C) 2005, 2007, 2009 Free Software Foundation, Inc.
 #
 # Written by Sergey Poznyakoff
 #
@@ -18,12 +18,13 @@
 # with GNU paxutils; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-INCLUDES = -I$(top_srcdir)/lib -I../ -I../lib -I../pax
+INCLUDES = -I$(top_srcdir)/gnu -I../ -I../gnu -I../lib
 
 noinst_LIBRARIES = libpax.a
 noinst_HEADERS = tar.h paxbuf.h pax.h
 
 libpax_a_SOURCES = \
+ localedir.h\
  error.c\
  exit.c\
  names.c\
@@ -32,6 +33,7 @@ libpax_a_SOURCES = \
  tarbuf.c\
  rtape.c
 
+BUILT_SOURCES=localedir.h
 localedir = $(datadir)/locale
 
 DISTCLEANFILES = localedir.h

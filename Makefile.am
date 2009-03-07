@@ -1,6 +1,6 @@
 # This file is part of GNU paxutils
 #
-# Copyright (c) 2005, 2007 Free Software Foundation, Inc.
+# Copyright (c) 2005, 2007, 2009 Free Software Foundation, Inc.
 #
 # Written by Sergey Poznyakoff
 #
@@ -18,6 +18,18 @@
 # with GNU Paxutils; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = lib paxlib paxtest po
+ACLOCAL_AMFLAGS = -I am -I m4
+
+EXTRA_DIST = Make.rules
+
+SUBDIRS = gnu paxlib paxtest rmt po
+
+gen_start_date = 2008-05-21
+prev_change_log = ChangeLog.CVS
+changelog_dir = .
+include Make.rules
+
+dist-hook:
+	$(MAKE) changelog_dir=$(distdir) make-ChangeLog
+

@@ -1,6 +1,6 @@
 # This file is part of GNU paxutils
 #
-# Copyright (C) 2005, 2007 Free Software Foundation, Inc.
+# Copyright (C) 2005, 2007, 2009 Free Software Foundation, Inc.
 #
 # Written by Sergey Poznyakoff
 #
@@ -22,7 +22,7 @@ noinst_PROGRAMS = paxtest
 paxtest_SOURCES = paxtest.c
 noinst_HEADERS = paxtest.h
 
-INCLUDES = -I$(top_srcdir)/lib -I../ -I../lib -I../paxlib
+INCLUDES = -I$(top_srcdir)/gnu -I../ -I../gnu -I../lib  -I../paxlib
 
-LDADD = ../paxlib/libpax.a ../lib/libgnu.a $(LIBINTL) $(LIBICONV)
+LDADD = ../paxlib/libpax.a ../gnu/libgnu.a $(LIBINTL) $(LIBICONV)
 
