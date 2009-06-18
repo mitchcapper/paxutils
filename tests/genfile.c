@@ -2,7 +2,7 @@
    Print statistics for existing files.
 
    Copyright (C) 1995, 1996, 1997, 2001, 2003, 2004, 2005, 2006, 2007,
-   2008 Free Software Foundation, Inc.
+   2008, 2009 Free Software Foundation, Inc.
 
    François Pinard <pinard@iro.umontreal.ca>, 1995.
    Sergey Poznyakoff <gray@mirddin.farlep.net>, 2004, 2005, 2006, 2007, 2008.
@@ -574,7 +574,7 @@ print_stat (const char *name)
 	{
 	  mode_t mask = ~0;
 
-	  if (ispunct (p[4]))
+	  if (ispunct ((unsigned char) p[4]))
 	    {
 	      char *q;
 
@@ -771,12 +771,12 @@ exec_command (void)
 
   while ((p = fgets (buf, sizeof buf, fp)))
     {
-      while (*p && !isspace (*p) && *p != ':')
+      while (*p && !isspace ((unsigned char) *p) && *p != ':')
 	p++;
 
       if (*p == ':')
 	{
-	  for (p++; *p && isspace (*p); p++)
+	  for (p++; *p && isspace ((unsigned char) *p); p++)
 	    ;
 
 	  if (*p
@@ -784,7 +784,7 @@ exec_command (void)
 	    {
 	      char *end;
 	      size_t n = strtoul (p + sizeof CHECKPOINT_TEXT - 1, &end, 10);
-	      if (!(*end && !isspace (*end)))
+	      if (!(*end && !isspace ((unsigned char) *end)))
 		{
 		  process_checkpoint (n);
 		  continue;
