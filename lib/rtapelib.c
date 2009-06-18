@@ -425,7 +425,10 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
   }
 
   /* FIXME: Should somewhat validate the decoding, here.  */
-
+  if (gethostbyname (remote_host) == NULL)
+    error (EXIT_ON_EXEC_ERROR, 0, _("Cannot connect to %s: resolve failed"),
+	   remote_host);
+	  
   if (remote_user && *remote_user == '\0')
     remote_user = 0;
 
