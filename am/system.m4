@@ -26,4 +26,6 @@ AC_DEFUN([PU_SYSTEM],[
   AC_CHECK_FUNCS_ONCE(lstat mkfifo setlocale)
   AC_REQUIRE([gl_INTTOSTR])
   AC_REQUIRE([gl_STDINT_H])
+
+  AC_SEARCH_LIBS(gethostbyname, nsl)
 ])
