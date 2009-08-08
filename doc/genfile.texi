@@ -1,5 +1,5 @@
 @c This is part of the paxutils manual.
-@c Copyright (C) 2005, 2006 Free Software Foundation, Inc.
+@c Copyright (C) 2005, 2006, 2009 Free Software Foundation, Inc.
 @c Written by Sergey Poznyakoff
 @c This file is distributed under GFDL 1.1 or any later version
 @c published by the Free Software Foundation.
@@ -268,31 +268,14 @@ commands when some of the files change during archiving. It is an
 experimental mode.
 
     The @samp{Exec Mode} is toggled by @option{--run} command line
-option (or its alias @option{-r}). The argument to this option gives
-the command line to be executed. The actual command line is
-constructed by inserting @option{--checkpoint} option between the
-command name and its first argument (if any). Due to this, the
-argument to @option{--run} may not use traditional @command{tar}
-option syntax, i.e., the following is wrong: 
+option (or its alias @option{-r}). The non-optional arguments to
+@command{getopt} give the command line to be executed. Normally,
+it should contain at least the @option{--checkpoint} option.
 
-@smallexample
-# Wrong!
-genfile --run 'tar cf foo bar'
-@end smallexample
-
-@noindent
-
-Use the following syntax instead:
-
-@smallexample
-genfile --run 'tar -cf foo bar'
-@end smallexample
-
-    The rest of command line after @option{--run} or its equivalent
-specifies checkpoint values and actions to be executed upon reaching
-them. Checkpoint values are introduced with @option{--checkpoint}
-command line option. Argument to this option is the number of
-checkpoint in decimal.
+    A set of options is provided for defining checkpoint values and
+actions to be executed upon reaching them. Checkpoint values are
+introduced with the @option{--checkpoint} command line
+option. Argument to this option is the number of checkpoint in decimal.
 
     Any number of @dfn{actions} may be specified after a
 checkpoint. Available actions are
@@ -316,7 +299,9 @@ an almost arbitrary format (@pxref{Date input formats}).
 
 @item --exec @var{command}
     Execute given shell command.
-    
+
+@item --unlink @var{file}
+    Unlink the @var{file}.
 @end table
 
     Option @option{--verbose} instructs @command{genfile} to print on
@@ -329,3 +314,35 @@ connected to descriptor 1. All messages it prints to file descriptor
 error.
 
     @command{Genfile} exits with the exit status of the executed command.
+
+    For compatibility with previous @command{genfile} versions, the
+@option{--run} option takes an optional argument. If used this way,
+its argument supplies the command line to be executed. There should
+be no non-optional arguments in the @command{genfile} command line.
+
+    The actual command line is constructed by inserting
+the @option{--checkpoint} option between the command name and its
+first argument (if any). Due to this, the argument to @option{--run}
+may not use traditional @command{tar} option syntax, i.e., the
+following is wrong:
+
+@smallexample
+# Wrong!
+genfile --run='tar cf foo bar'
+@end smallexample
+
+@noindent
+
+Use the following syntax instead:
+
+@smallexample
+genfile --run='tar -cf foo bar' @var{actions}...
+@end smallexample
+
+The above command line is equivalent to
+
+@smallexample
+genfile @var{actions}... -- tar -cf foo bar
+@end smallexample
+
+Notice, that the use of compatibility mode is deprecated.
