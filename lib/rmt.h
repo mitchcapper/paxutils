@@ -61,7 +61,7 @@ extern bool force_local_option;
 
 #define rmtcreat(dev_name, mode, command) \
    (_remdev (dev_name) \
-    ? rmt_open__ (dev_name, 1 | O_CREAT, __REM_BIAS, command) \
+    ? rmt_open__ (dev_name, O_CREAT | O_WRONLY, __REM_BIAS, command) \
     : creat (dev_name, mode))
 
 #define rmtlstat(dev_name, muffer) \
