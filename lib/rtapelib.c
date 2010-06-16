@@ -121,7 +121,7 @@ do_command (int handle, const char *buffer)
   /* Save the current pipe handler and try to make the request.  */
 
   size_t length = strlen (buffer);
-  RETSIGTYPE (*pipe_handler) () = signal (SIGPIPE, SIG_IGN);
+  RETSIGTYPE (*pipe_handler) (int) = signal (SIGPIPE, SIG_IGN);
   ssize_t written = full_write (WRITE_SIDE (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
 
@@ -428,7 +428,7 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
   if (gethostbyname (remote_host) == NULL)
     error (EXIT_ON_EXEC_ERROR, 0, _("Cannot connect to %s: resolve failed"),
 	   remote_host);
-	  
+
   if (remote_user && *remote_user == '\0')
     remote_user = 0;
 
@@ -596,7 +596,7 @@ size_t
 rmt_write__ (int handle, char *buffer, size_t length)
 {
   char command_buffer[COMMAND_BUFFER_SIZE];
-  RETSIGTYPE (*pipe_handler) ();
+  RETSIGTYPE (*pipe_handler) (int);
   size_t written;
 
   sprintf (command_buffer, "W%lu\n", (unsigned long) length);
@@ -715,7 +715,7 @@ rmt_ioctl__ (int handle, int operation, char *argument)
 	    errno = EOVERFLOW;
 	    return -1;
 	  }
-	
+
 	for (; status > 0; status -= counter, argument += counter)
 	  {
 	    counter = safe_read (READ_SIDE (handle), argument, status);

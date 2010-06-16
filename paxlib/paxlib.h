@@ -88,7 +88,7 @@ void seek_error (char const *);
 void seek_error_details (char const *, off_t);
 void seek_warn (char const *);
 void seek_warn_details (char const *, off_t);
-void stat_fatal (char const *);
+void stat_fatal (char const *) __attribute__ ((noreturn));
 void stat_error (char const *);
 void stat_warn (char const *);
 void symlink_error (char const *, char const *);
@@ -98,8 +98,9 @@ void unlink_error (char const *);
 void utime_error (char const *);
 void waitpid_error (char const *);
 void write_error (char const *);
+void write_error_details (char const *, size_t, size_t);
 
-void pax_exit (void);
+void pax_exit (void) __attribute__ ((noreturn));;
 void fatal_exit (void) __attribute__ ((noreturn));
 
 #define STRINGIFY_BIGINT(i, b) umaxtostr (i, b)

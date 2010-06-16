@@ -61,7 +61,7 @@ FILE *dbgout;
 	}					\
     }						\
   while (0)
-      
+
 
 
 static void
@@ -74,13 +74,13 @@ trimnl (char *str)
 	str[len-1] = 0;
     }
 }
-  
+
 
 
 char *input_buf_ptr = NULL;
 size_t input_buf_size = 0;
 
-char *
+static char *
 rmt_read (void)
 {
   ssize_t rc = getline (&input_buf_ptr, &input_buf_size, stdin);
@@ -94,7 +94,7 @@ rmt_read (void)
   return NULL;
 }
 
-void
+static void
 rmt_write (const char *fmt, ...)
 {
   va_list ap;
@@ -103,14 +103,14 @@ rmt_write (const char *fmt, ...)
   VDEBUG (10, "S: ", fmt, ap);
 }
 
-void
+static void
 rmt_reply (uintmax_t code)
 {
   char buf[UINTMAX_STRSIZE_BOUND];
   rmt_write ("A%s\n", umaxtostr (code, buf));
 }
 
-void
+static void
 rmt_error_message (int code, const char *msg)
 {
   DEBUG1 (10, "S: E%d\n", code);
@@ -119,7 +119,7 @@ rmt_error_message (int code, const char *msg)
   fprintf (stdout, "E%d\n%s\n", code, msg);
 }
 
-void
+static void
 rmt_error (int code)
 {
   rmt_error_message (code, strerror (code));
@@ -152,7 +152,7 @@ struct rmt_kw
 
 #define RMT_KW(s,v) { #s, sizeof (#s) - 1, v }
 
-int
+static int
 xlat_kw (const char *s, const char *pfx,
 	 struct rmt_kw const *kw, int *valp, const char **endp)
 {
@@ -167,7 +167,7 @@ xlat_kw (const char *s, const char *pfx,
 	  slen -= pfxlen;
 	}
     }
-  
+
   for (; kw->name; kw++)
     {
       if (slen >= kw->len
@@ -182,7 +182,7 @@ xlat_kw (const char *s, const char *pfx,
   return 1;
 }
 
-const char *
+static const char *
 skip_ws (const char *s)
 {
   while (*s && c_isblank (*s))
@@ -222,7 +222,7 @@ static struct rmt_kw const open_flag_kw[] =
     { NULL }
   };
 
-int
+static int
 decode_open_flag (const char *mstr, int *pmode)
 {
   int mode = 0;
@@ -244,7 +244,7 @@ decode_open_flag (const char *mstr, int *pmode)
 	}
 
       mode |= v;
-      
+
       if (*p && c_isblank (*p))
 	p = skip_ws (p);
       if (*p == 0)
@@ -271,12 +271,12 @@ decode_open_flag (const char *mstr, int *pmode)
 /* Syntax
    ------
    O<device>\n<flags>\n
-   
+
    Function
    --------
    Opens the <device> with given <flags>. If a device had already been opened,
    it is closed before opening the new one.
-   
+
    Arguments
    ---------
    <device> - name of the device to open.
@@ -291,19 +291,19 @@ decode_open_flag (const char *mstr, int *pmode)
    Reply
    -----
    A0\n on success, E0\n<msg>\n on error.
-      
+
    Extensions
    ----------
    BSD version allows only decimal number as <flags>
 */
-   
+
 static void
 open_device (char *str)
 {
   char *device = xstrdup (str);
   char *flag_str;
   int flag;
-  
+
   flag_str = rmt_read ();
   if (!flag_str)
     {
@@ -327,7 +327,7 @@ open_device (char *str)
 /* Syntax
    ------
    C[<device>]\n
-   
+
    Function
    --------
    Close the currently open device.
@@ -335,13 +335,13 @@ open_device (char *str)
    Arguments
    ---------
    Any arguments are silently ignored.
-   
+
    Reply
    -----
    A0\n on success, E0\n<msg>\n on error.
 */
 static void
-close_device ()
+close_device (void)
 {
   if (close (device_fd) < 0)
     rmt_error (errno);
@@ -355,12 +355,12 @@ close_device ()
 /* Syntax
    ------
    L<whence>\n<offset>\n
-   
+
    Function
    --------
    Perform an lseek(2) on the currently open device with the specified
    parameters.
-   
+
    Arguments
    ---------
    <whence>  -  Where to measure offset from. Valid values are:
@@ -370,7 +370,7 @@ close_device ()
    Reply
    -----
    A<offset>\n on success. The <offset> is the new offset in file.
-   E0\n<msg>\n on error.   
+   E0\n<msg>\n on error.
 
    Extensions
    ----------
@@ -384,15 +384,15 @@ static struct rmt_kw const seek_whence_kw[] =
     RMT_KW(END, SEEK_END),
     { NULL }
   };
-  
-void
+
+static void
 lseek_device (const char *str)
 {
   char *p;
   int whence;
   off_t off;
   uintmax_t n;
-  
+
   if (str[0] && str[1] == 0)
     {
       switch (str[0])
@@ -427,7 +427,7 @@ lseek_device (const char *str)
       rmt_error_message (EINVAL, N_("Invalid seek offset"));
       return;
     }
-    
+
   if (n != off || errno == ERANGE)
     {
       rmt_error_message (EINVAL, N_("Seek offset out of range"));
@@ -444,15 +444,15 @@ lseek_device (const char *str)
 /* Syntax
    ------
    R<count>\n
-   
+
    Function
    --------
    Read <count> bytes of data from the current device.
-   
+
    Arguments
    ---------
    <count>  -  number of bytes to read.
-   
+
    Reply
    -----
    On success: A<rdcount>\n, followed by <rdcount> bytes of data read from
@@ -460,21 +460,21 @@ lseek_device (const char *str)
    On error: E0\n<msg>\n
 */
 
-void
+static void
 read_device (const char *str)
 {
   char *p;
   size_t size;
   uintmax_t n;
   size_t status;
-  
+
   n = size = strtoumax (str, &p, 10);
   if (*p)
     {
       rmt_error_message (EINVAL, N_("Invalid byte count"));
       return;
     }
-  
+
   if (n != size || errno == ERANGE)
     {
       rmt_error_message (EINVAL, N_("Byte count out of range"));
@@ -495,15 +495,15 @@ read_device (const char *str)
 /* Syntax
    ------
    W<count>\n followed by <count> bytes of input data.
-   
+
    Function
    --------
    Write data onto the current device.
-   
+
    Arguments
    ---------
    <count>  - number of bytes.
-   
+
    Reply
    -----
    On success: A<wrcount>\n, where <wrcount> is number of bytes actually
@@ -511,21 +511,21 @@ read_device (const char *str)
    On error: E0\n<msg>\n
 */
 
-void
+static void
 write_device (const char *str)
 {
   char *p;
   size_t size;
   uintmax_t n;
   size_t status;
-  
+
   n = size = strtoumax (str, &p, 10);
   if (*p)
     {
       rmt_error_message (EINVAL, N_("Invalid byte count"));
       return;
     }
-  
+
   if (n != size || errno == ERANGE)
     {
       rmt_error_message (EINVAL, N_("Byte count out of range"));
@@ -552,30 +552,30 @@ write_device (const char *str)
 /* Syntax
    ------
    I<opcode>\n<count>\n
-   
+
    Function
    --------
    Perform a MTIOCOP ioctl(2) command using the specified paramedters.
-   
+
    Arguments
    ---------
    <opcode>   -  MTIOCOP operation code.
    <count>    -  mt_count.
-   
+
    Reply
    -----
    On success: A0\n
    On error: E0\n<msg>\n
 */
 
-void
+static void
 iocop_device (const char *str)
 {
   char *p;
   long opcode;
   off_t count;
   uintmax_t n;
-  
+
   opcode = strtol (str, &p, 10);
   if (*p)
     {
@@ -589,13 +589,13 @@ iocop_device (const char *str)
       rmt_error_message (EINVAL, N_("Invalid byte count"));
       return;
     }
-    
+
   if (n != count || errno == ERANGE)
     {
       rmt_error_message (EINVAL, N_("Byte count out of range"));
       return;
     }
-  
+
 #ifdef MTIOCTOP
   {
     struct mtop mtop;
@@ -621,23 +621,23 @@ iocop_device (const char *str)
 /* Syntax
    ------
    S\n
-   
+
    Function
    --------
    Return the status of the open device, as obtained with a MTIOCGET
    ioctl call.
-   
+
    Arguments
    ---------
    None
-   
+
    Reply
    -----
    On success: A<count>\n followed by <count> bytes of data.
    On error: E0\n<msg>\n
 */
 
-void
+static void
 status_device (const char *str)
 {
   if (*str)
@@ -661,7 +661,7 @@ status_device (const char *str)
   rmt_error_message (ENOSYS, N_("Operation not supported"));
 #endif
 }
-  
+
 
 
 const char *argp_program_version = "rmt (" PACKAGE_NAME ") " VERSION;
@@ -689,13 +689,13 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case 'd':
       dbglev = strtol (arg, NULL, 0);
       break;
-      
+
     case DEBUG_FILE_OPTION:
       dbgout = fopen (arg, "w");
       if (!dbgout)
 	error (EXIT_FAILURE, errno, _("cannot open %s"), arg);
       break;
-      
+
     case ARGP_KEY_FINI:
       if (dbglev)
 	{
@@ -705,13 +705,13 @@ parse_opt (int key, char *arg, struct argp_state *state)
       else if (dbgout)
 	dbglev = 1;
       break;
-      
+
     default:
       return ARGP_ERR_UNKNOWN;
     }
   return 0;
 }
-      
+
 static struct argp argp = {
   options,
   parse_opt,
@@ -742,7 +742,7 @@ main (int argc, char **argv)
   char *buf;
   int idx;
   int stop = 0;
-  
+
   set_program_name (argv[0]);
   argp_version_setup ("rmt", rmt_authors);
 
@@ -752,7 +752,7 @@ main (int argc, char **argv)
       bindtextdomain (PACKAGE, LOCALEDIR);
       textdomain (PACKAGE);
     }
-  
+
   if (argp_parse (&argp, argc, argv, ARGP_IN_ORDER, &idx, NULL))
     exit (EXIT_FAILURE);
   if (idx != argc)
@@ -764,7 +764,7 @@ main (int argc, char **argv)
 	error (EXIT_FAILURE, errno, _("cannot open %s"), argv[idx]);
       dbglev = 1;
     }
-  
+
   while (!stop && (buf = rmt_read ()) != NULL)
     {
       switch (buf[0])
@@ -773,36 +773,36 @@ main (int argc, char **argv)
 	  close_device ();
 	  stop = 1;
 	  break;
-	  
+
 	case 'I':
 	  iocop_device (buf + 1);
 	  break;
-	  
+
 	case 'L':
 	  lseek_device (buf + 1);
 	  break;
-	  
+
 	case 'O':
 	  open_device (buf + 1);
 	  break;
-	  
+
 	case 'R':
 	  read_device (buf + 1);
 	  break;
-	  
+
 	case 'S':
 	  status_device (buf + 1);
 	  break;
-	  
+
 	case 'W':
 	  write_device (buf + 1);
 	  break;
-	  
+
 	default:
 	  DEBUG1 (1, "garbage input %s\n", buf);
 	  rmt_error_message (EINVAL, N_("Garbage command"));
 	  return EXIT_FAILURE;	/* exit status used to be 3 */
-	}	  
+	}
     }
   if (device_fd >= 0)
     close_device ();

@@ -353,12 +353,6 @@ write_error_details (char const *name, size_t status, size_t size)
 }
 
 void
-write_fatal (char const *name)
-{
-  call_arg_fatal ("write", name);
-}
-
-void
 chdir_fatal (char const *name)
 {
   call_arg_fatal ("chdir", name);
