@@ -582,13 +582,13 @@ print_stat (const char *name)
 	printf ("%lu", (unsigned long) st.st_ino);
       else if (strncmp (p, "mode", 4) == 0)
 	{
-	  mode_t mask = ~0;
+	  unsigned val = st.st_mode;
 
 	  if (ispunct ((unsigned char) p[4]))
 	    {
 	      char *q;
 
-	      mask = strtoul (p + 5, &q, 8);
+	      val &= strtoul (p + 5, &q, 8);
 	      if (*q)
 		{
 		  printf ("\n");
@@ -600,7 +600,7 @@ print_stat (const char *name)
 	      printf ("\n");
 	      error (EXIT_FAILURE, 0, _("Unknown field `%s'"), p);
 	    }
-	  printf ("%0o", st.st_mode & mask);
+	  printf ("%0o", val);
 	}
       else if (strcmp (p, "nlink") == 0)
 	printf ("%lu", (unsigned long) st.st_nlink);
@@ -699,7 +699,7 @@ exec_checkpoint (struct action *p)
       if (unlink (p->name))
 	error (0, errno, _("cannot unlink `%s'"), p->name);
       break;
-      
+
     default:
       abort ();
     }

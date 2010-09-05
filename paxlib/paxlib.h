@@ -100,7 +100,7 @@ void waitpid_error (char const *);
 void write_error (char const *);
 void write_error_details (char const *, size_t, size_t);
 
-void pax_exit (void) __attribute__ ((noreturn));;
+void pax_exit (void) __attribute__ ((noreturn));
 void fatal_exit (void) __attribute__ ((noreturn));
 
 #define STRINGIFY_BIGINT(i, b) umaxtostr (i, b)
