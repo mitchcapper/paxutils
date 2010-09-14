@@ -87,7 +87,7 @@ PU_RMT
 PU_RTAPELIB
 PU_SYSTEM
 
-AC_CHECK_FUNCS(fsync lstat mkfifo readlink symlink setlocale utimes)
+AC_CHECK_FUNCS(fsync lstat mkfifo readlink symlink setlocale)
 AC_CHECK_DECLS([getgrgid],,, [#include <grp.h>])
 AC_CHECK_DECLS([getpwuid],,, [#include <pwd.h>])
 

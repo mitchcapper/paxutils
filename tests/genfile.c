@@ -29,7 +29,6 @@
 #include <argp.h>
 #include <argcv.h>
 #include <getdate.h>
-#include <utimens.h>
 #include <inttostr.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -656,7 +655,7 @@ exec_checkpoint (struct action *p)
 	struct timespec ts[2];
 
 	ts[0] = ts[1] = p->ts;
-	if (utimens (p->name, ts) != 0)
+	if (utimensat (AT_FDCWD, p->name, ts, 0) != 0)
 	  {
 	    error (0, errno, _("cannot set time on `%s'"), p->name);
 	    break;

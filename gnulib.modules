@@ -18,5 +18,6 @@ safe-read
 stdbool
 strerror
 strtol
+utimensat
 version-etc-fsf
 xalloc
