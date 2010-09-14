@@ -100,6 +100,7 @@ rmt_write (const char *fmt, ...)
   va_list ap;
   va_start (ap, fmt);
   vfprintf (stdout, fmt, ap);
+  fflush (stdout);
   VDEBUG (10, "S: ", fmt, ap);
 }
 
@@ -117,6 +118,7 @@ rmt_error_message (int code, const char *msg)
   DEBUG1 (10, "S: %s\n", msg);
   DEBUG1 (1, "error: %s\n", msg);
   fprintf (stdout, "E%d\n%s\n", code, msg);
+  fflush (stdout);
 }
 
 static void
@@ -225,44 +227,57 @@ static struct rmt_kw const open_flag_kw[] =
 static int
 decode_open_flag (const char *mstr, int *pmode)
 {
+  int numeric_mode = 0;
   int mode = 0;
+  const char *p;
 
-  while (mstr)
+  mstr = skip_ws (mstr);
+  if (c_isdigit (*mstr))
     {
-      int v;
-      const char *p;
+      numeric_mode = strtol (mstr, (char**) &p, 10);
+      mstr = skip_ws (p);
+    }
 
-      mstr = skip_ws (mstr);
-      if (*mstr == 0)
-	break;
-      else if (c_isdigit (*mstr))
-	v = strtol (mstr, (char**) &p, 10);
-      else if (xlat_kw (mstr, "O_", open_flag_kw, &v, &p))
+  if (*mstr)
+    {
+      while (mstr)
 	{
-	  rmt_error_message (EINVAL, "invalid open mode");
-	  return 1;
-	}
+	  int v;
+	  
+	  mstr = skip_ws (mstr);
+	  if (*mstr == 0)
+	    break;
+	  else if (c_isdigit (*mstr))
+	    v = strtol (mstr, (char**) &p, 10);
+	  else if (xlat_kw (mstr, "O_", open_flag_kw, &v, &p))
+	    {
+	      rmt_error_message (EINVAL, "invalid open mode");
+	      return 1;
+	    }
 
-      mode |= v;
-
-      if (*p && c_isblank (*p))
-	p = skip_ws (p);
-      if (*p == 0)
-	break;
-      else if (*p == '|')
-	{
-	  /* FIXMEL
-	     if (p[1] == 0)
-	       rmt_error_message (EINVAL, "invalid open mode");
-	  */
-	  mstr = p + 1;
-	}
-      else
-	{
-	  rmt_error_message (EINVAL, "invalid open mode");
-	  return 1;
+	  mode |= v;
+	  
+	  if (*p && c_isblank (*p))
+	    p = skip_ws (p);
+	  if (*p == 0)
+	    break;
+	  else if (*p == '|')
+	    {
+	      /* FIXMEL
+		 if (p[1] == 0)
+		 rmt_error_message (EINVAL, "invalid open mode");
+	      */
+	      mstr = p + 1;
+	    }
+	  else
+	    {
+	      rmt_error_message (EINVAL, "invalid open mode");
+	      return 1;
+	    }
 	}
     }
+  else
+    mode = numeric_mode;
   *pmode = mode;
   return 0;
 }
@@ -288,6 +303,10 @@ decode_open_flag (const char *mstr, int *pmode)
       64|512
       CREAT|TRUNC
 
+   In addition, a compined form is also allowed, i.e. a decimal mode followed
+   by its symbolic representation.  In this case the symbolic representation
+   is given preference.
+      
    Reply
    -----
    A0\n on success, E0\n<msg>\n on error.
