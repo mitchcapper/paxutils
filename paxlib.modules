@@ -6,7 +6,7 @@ dirname
 error
 fileblocks
 full-write
-getopt
+getopt-gnu
 gettext
 hash
 inttostr

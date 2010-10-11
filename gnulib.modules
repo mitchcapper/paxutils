@@ -6,12 +6,12 @@ configmake
 dirname
 fseeko
 full-write
-getdate
 gettext
-getopt
+getopt-gnu
 gitlog-to-changelog
 inttostr
 obstack
+parse-datetime
 quote
 quotearg
 safe-read

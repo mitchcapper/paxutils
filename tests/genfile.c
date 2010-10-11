@@ -28,7 +28,7 @@
 #include <argmatch.h>
 #include <argp.h>
 #include <argcv.h>
-#include <getdate.h>
+#include <parse-datetime.h>
 #include <inttostr.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -363,7 +363,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case OPT_DATE:
-      if (!get_date (&touch_time, arg, NULL))
+      if (! parse_datetime (&touch_time, arg, NULL))
 	argp_error (state, _("Unknown date format"));
       break;
 
@@ -854,7 +854,7 @@ main (int argc, char **argv)
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
 
-  get_date (&touch_time, "now", NULL);
+  parse_datetime (&touch_time, "now", NULL);
 
   /* Decode command options.  */
 
