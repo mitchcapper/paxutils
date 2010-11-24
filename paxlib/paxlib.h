@@ -21,7 +21,6 @@
 #ifndef _paxlib_h_
 #define _paxlib_h_
 
-#include <hash.h>
 #include <inttostr.h>
 
 /* Error reporting functions and definitions */
@@ -107,9 +106,6 @@ void fatal_exit (void) __attribute__ ((noreturn));
 
 
 /* Name-related functions */
-bool hash_string_insert (Hash_table **table, char const *string);
-bool hash_string_lookup (Hash_table const *table, char const *string);
-
 bool removed_prefixes_p (void);
 char *safer_name_suffix (char const *file_name, bool link_target, bool absolute_names);
 

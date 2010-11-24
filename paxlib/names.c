@@ -1,5 +1,5 @@
 /* This file is part of GNU paxutils
-   Copyright (C) 2005, 2007 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007, 2010 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by the
@@ -56,7 +56,7 @@ hash_string_insert_prefix (Hash_table **table, char const *string, size_t len,
     }
   else
     s = xstrdup (string);
-  
+
   if (! ((t
 	  || (*table = t = hash_initialize (0, 0, hash_string_hasher,
 					    hash_string_compare, 0)))
@@ -74,21 +74,6 @@ hash_string_insert_prefix (Hash_table **table, char const *string, size_t len,
       free (s);
       return 0;
     }
-}
-
-/* Return zero if TABLE contains a copy of STRING; otherwise, insert a
-   copy of STRING to TABLE and return 1.  */
-bool
-hash_string_insert (Hash_table **table, char const *string)
-{
-  return hash_string_insert_prefix (table, string, 0, NULL);
-}
-
-/* Return 1 if TABLE contains STRING.  */
-bool
-hash_string_lookup (Hash_table const *table, char const *string)
-{
-  return table && hash_lookup (table, string);
 }
 
 

@@ -27,6 +27,7 @@ libpax_a_SOURCES = \
  localedir.h\
  error.c\
  exit.c\
+ exit-status.c\
  names.c\
  paxbuf.c\
  paxlib.h\
@@ -44,6 +45,3 @@ localedir.h : Makefile
 	echo "#endif" >> $@
 
 rtapelib.o: localedir.h
-
-
-
