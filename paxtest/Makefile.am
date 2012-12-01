@@ -22,7 +22,7 @@ noinst_PROGRAMS = paxtest
 paxtest_SOURCES = paxtest.c
 noinst_HEADERS = paxtest.h
 
-INCLUDES = -I$(top_srcdir)/gnu -I../ -I../gnu -I../lib  -I../paxlib
+AM_CPPFLAGS = -I$(top_srcdir)/gnu -I../ -I../gnu -I../lib  -I../paxlib
 
 LDADD = ../paxlib/libpax.a ../gnu/libgnu.a $(LIBINTL) $(LIBICONV)
 

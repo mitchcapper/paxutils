@@ -18,7 +18,7 @@
 # with GNU paxutils; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-INCLUDES = -I$(top_srcdir)/gnu -I../ -I../gnu -I../lib
+AM_CPPFLAGS = -I$(top_srcdir)/gnu -I../ -I../gnu -I../lib
 
 noinst_LIBRARIES = libpax.a
 noinst_HEADERS = tar.h paxbuf.h pax.h
