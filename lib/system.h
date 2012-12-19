@@ -471,8 +471,11 @@ char *getenv ();
 # define SET_BINARY_MODE(arc)
 # define ERRNO_IS_EACCES 0
 # define TTY_NAME "/dev/tty"
-# define sys_reset_uid_gid() \
- do { setuid (getuid ()); setgid (getgid ()); } while (0)
+# define sys_reset_uid_gid()					\
+  do {								\
+    if (! (setuid (getuid ()) == 0 && setgid (getgid ()) == 0)) \
+      abort ();							\
+  } while (0)
 #endif
 
 #if XENIX
