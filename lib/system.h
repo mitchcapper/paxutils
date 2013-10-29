@@ -389,9 +389,16 @@ extern int errno;
 # define ST_NBLOCKSIZE 512
 #endif
 
+/* Network Appliance file systems store small files directly in the
+   inode if st_size <= 64; in this case the number of blocks can be
+   zero.  Perhaps other file systems have similar problems; so,
+   somewhat arbitrarily, do not consider a file to be sparse if
+   it has no blocks but st_size < ST_NBLOCKSIZE.  */
 #define ST_IS_SPARSE(st)                                  \
   (ST_NBLOCKS (st)                                        \
-    < ((st).st_size / ST_NBLOCKSIZE + ((st).st_size % ST_NBLOCKSIZE != 0)))
+   < ((st).st_size / ST_NBLOCKSIZE			  \
+      + ((st).st_size % ST_NBLOCKSIZE != 0		  \
+	 && (st).st_size / ST_NBLOCKSIZE != 0)))
 
 /* Declare standard functions.  */
 
