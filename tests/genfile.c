@@ -557,7 +557,6 @@ make_fragment (int fd, char *offstr, char *mapstr)
 static void
 generate_sparse_file (int argc, char **argv)
 {
-  int i;
   int fd;
   int flags = O_CREAT | O_RDWR | O_BINARY;
 
