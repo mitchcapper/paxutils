@@ -107,6 +107,9 @@ struct timespec touch_time;
 /* Verbose mode */
 int verbose;
 
+/* Quiet mode */
+int quiet;
+
 const char *argp_program_version = "genfile (" PACKAGE ") " VERSION;
 const char *argp_program_bug_address = "<" PACKAGE_BUGREPORT ">";
 static char doc[] = N_("genfile manipulates data files for GNU paxutils test suite.\n"
@@ -145,7 +148,8 @@ static struct argp_option options[] = {
   {"seek", OPT_SEEK, N_("OFFSET"), 0,
    N_("Seek to the given offset before writing data"),
    GRP+1 },
-
+  {"quiet", 'q', NULL, 0,
+   N_("Suppress non-fatal diagnostic messages") },
 #undef GRP
 #define GRP 10
   {NULL, 0, NULL, 0,
@@ -266,11 +270,11 @@ verify_file (char *file_name)
 	error (0, errno, _("stat(%s) failed"), file_name);
 
       if (st.st_size != file_length + seek_offset)
-	error (1, 0, _("requested file length %lu, actual %lu"),
+	error (EXIT_FAILURE, 0, _("requested file length %lu, actual %lu"),
 	       (unsigned long)st.st_size, (unsigned long)file_length);
 
-      if (mode == mode_sparse && !ST_IS_SPARSE (st))
-	error (1, 0, _("created file is not sparse"));
+      if (!quiet && mode == mode_sparse && !ST_IS_SPARSE (st))
+	error (EXIT_FAILURE, 0, _("created file is not sparse"));
     }
 }
 
@@ -326,6 +330,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
       block_size = get_size (arg, 0);
       break;
 
+    case 'q':
+      quiet = 1;
+      break;
+      
     case 's':
       mode = mode_sparse;
       break;

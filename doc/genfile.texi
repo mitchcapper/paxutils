@@ -181,8 +181,14 @@ letters @samp{A}, @samp{B}, @samp{C} and @samp{D}.
 @item 1053184  @tab 2048000     @tab Zero bytes
 @end multitable
 
-    The exit code of @command{genfile --status} command is @code{0}
-only if created file is actually sparse.
+@cindex --quite, option
+    The exit code of @command{genfile --sparse} command is @code{0}
+only if created file is actually sparse.  If it is not, the
+appropriate error message is displayed and the command exists with
+code @code{1}.  The @option{--quite} (@option{-q}) option suppresses
+this behavior.  If @option{--quite} is given, @command{genfile
+--sparse} exits with code @code{0} if it was able to create the file,
+whether the resulting file is sparse or not.
 
 @node Status Mode
 @appendixsec Status Mode
