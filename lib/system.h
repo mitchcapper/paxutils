@@ -486,7 +486,7 @@ sys_reset_uid_gid (void)
   
   if ((pw = getpwuid (uid)) == NULL)
     {
-      FATAL_ERROR ((0, errno, "%s(%ld)", "getpwuid", (unsigned long)uid));
+      FATAL_ERROR ((0, errno, "%s(%lu)", "getpwuid", (unsigned long)uid));
     }
   if (initgroups (pw->pw_name, getgid ()))
     {
