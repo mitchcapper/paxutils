@@ -470,19 +470,37 @@ char *getenv ();
 #if MSDOS
 # include <process.h>
 # define SET_BINARY_MODE(arc) setmode(arc, O_BINARY)
-# define ERRNO_IS_EACCES errno == EACCES
 # define mkdir(file, mode) (mkdir) (file)
 # define TTY_NAME "con"
 # define sys_reset_uid_gid()
 #else
 # define SET_BINARY_MODE(arc)
-# define ERRNO_IS_EACCES 0
 # define TTY_NAME "/dev/tty"
-# define sys_reset_uid_gid()					\
-  do {								\
-    if (! (setuid (getuid ()) == 0 && setgid (getgid ()) == 0)) \
-      abort ();							\
-  } while (0)
+# include <paxlib.h>
+static inline void
+sys_reset_uid_gid (void)
+{
+  struct passwd *pw;
+  uid_t uid = getuid ();
+  gid_t gid = getgid ();
+  
+  if ((pw = getpwuid (uid)) == NULL)
+    {
+      FATAL_ERROR ((0, errno, "%s(%ld)", "getpwuid", (unsigned long)uid));
+    }
+  if (initgroups (pw->pw_name, getgid ()))
+    {
+      FATAL_ERROR ((0, errno, "%s", "initgroups"));
+    }
+  if (gid != getegid () && setgid (gid) && errno != EPERM)
+    {
+      FATAL_ERROR ((0, errno, "%s", "setgid"));
+    }
+  if (uid != geteuid () && setuid (uid) && errno != EPERM)
+    {
+      FATAL_ERROR ((0, errno, "%s", "setuid"));
+    }
+}
 #endif
 
 #if XENIX
