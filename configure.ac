@@ -20,7 +20,7 @@ AC_INIT([GNU paxutils], [0.0.1], [bug-paxutils@gnu.org])
 AC_CONFIG_SRCDIR([paxtest/paxtest.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
-AC_PREREQ([2.59])
+AC_PREREQ([2.64])
 AM_INIT_AUTOMAKE([1.8 gnits dist-bzip2 dist-shar std-options])
 
 AC_PROG_CC
