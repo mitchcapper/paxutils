@@ -19,4 +19,5 @@ savedir
 stdbool
 strtol
 unlocked-io
+verify
 xalloc
