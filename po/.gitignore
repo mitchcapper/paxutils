@@ -1,4 +1,4 @@
-
+Makevars
 Makefile.in.in
 Makevars.template
 POTFILES
@@ -8,6 +8,8 @@ en@boldquot.header
 en@quot.header
 insert-header.sed
 insert-header.sin
+paxutils.pot
 quot.sed
 remove-potcdate.sed
 remove-potcdate.sin
+stamp-po
