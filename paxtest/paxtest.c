@@ -31,7 +31,15 @@
 void
 xalloc_die (void)
 {
-     error(1, ENOMEM, "Exiting");
+  error (0, ENOMEM, "Exiting");
+  exit (1);
+}
+
+void
+fatal_exit (void)
+{
+  error (0, 0, "Fatal error");
+  exit (1);
 }
 
 void
@@ -45,7 +53,7 @@ dump (unsigned char *buf, size_t size)
       printf ("\n");
     }
 }
-  
+
 
 void
 read_and_dump (paxbuf_t pbuf)
@@ -53,7 +61,7 @@ read_and_dump (paxbuf_t pbuf)
   union block block;
   size_t size;
   pax_io_status_t rc;
-  
+
   while ((rc = paxbuf_read (pbuf, block.buffer, sizeof block, &size))
 	 == pax_io_success)
     {
@@ -73,7 +81,7 @@ main (int argc, char **argv)
     error (1, 0, "Not enough arguments");
 
   tar_archive_create (&pbuf, argv[1], 0, PAXBUF_READ, DEFAULT_BLOCKING_FACTOR);
-  
+
   rc = paxbuf_open (pbuf);
   printf ("Open: %d\n", rc);
   if (rc)
