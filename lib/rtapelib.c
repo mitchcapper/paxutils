@@ -504,7 +504,10 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 	  error (EXIT_ON_EXEC_ERROR, errno,
 		 _("Cannot redirect files for remote shell"));
 
-	sys_reset_uid_gid ();
+	char const *reseterr = sys_reset_uid_gid ();
+	if (reseterr)
+	  error (EXIT_ON_EXEC_ERROR, errno,
+		 _("Cannot reset uid and gid: %s"), reseterr);
 
 	if (remote_user)
 	  execl (remote_shell, remote_shell_basename, remote_host,

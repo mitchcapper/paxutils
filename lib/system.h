@@ -470,29 +470,22 @@ char *getenv ();
 # define SET_BINARY_MODE(arc)
 # define TTY_NAME "/dev/tty"
 # include <paxlib.h>
-static inline void
+static inline char const *
 sys_reset_uid_gid (void)
 {
-  struct passwd *pw;
   uid_t uid = getuid ();
   gid_t gid = getgid ();
+  struct passwd *pw = getpwuid (uid);
 
-  if ((pw = getpwuid (uid)) == NULL)
-    {
-      FATAL_ERROR ((0, errno, "%s(%lu)", "getpwuid", (unsigned long)uid));
-    }
-  if (initgroups (pw->pw_name, getgid ()))
-    {
-      FATAL_ERROR ((0, errno, "%s", "initgroups"));
-    }
+  if (!pw)
+    return "getpwuid";
+  if (initgroups (pw->pw_name, gid))
+    return "initgroups";
   if (gid != getegid () && setgid (gid) && errno != EPERM)
-    {
-      FATAL_ERROR ((0, errno, "%s", "setgid"));
-    }
+    return "setgid";
   if (uid != geteuid () && setuid (uid) && errno != EPERM)
-    {
-      FATAL_ERROR ((0, errno, "%s", "setuid"));
-    }
+    return "setuid";
+  return NULL;
 }
 #endif
 

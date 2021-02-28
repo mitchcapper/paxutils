@@ -503,7 +503,10 @@ rmt_open (const char *file_name, int open_mode, int bias,
 	close (from_remote[remote_pipe_number][PREAD]);
 	close (from_remote[remote_pipe_number][PWRITE]);
 
-	sys_reset_uid_gid ();
+	char const *reseterr = sys_reset_uid_gid ();
+	if (reseterr)
+	  error (EXIT_ON_EXEC_ERROR, errno,
+		 _("Cannot reset uid and gid: %s"), reseterr);
 
 	if (!rmt_command)
 	  rmt_command = DEFAULT_RMT_COMMAND;
