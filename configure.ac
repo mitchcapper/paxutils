@@ -29,7 +29,6 @@ gl_EARLY
 AC_PROG_RANLIB
 AC_SYS_LARGEFILE
 AC_ISC_POSIX
-AC_C_INLINE
 
 AC_CHECK_HEADERS(fcntl.h linux/fd.h memory.h net/errno.h \
   sgtty.h string.h \

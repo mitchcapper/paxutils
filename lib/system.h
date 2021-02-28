@@ -470,7 +470,7 @@ char *getenv ();
 # define SET_BINARY_MODE(arc)
 # define TTY_NAME "/dev/tty"
 # include <paxlib.h>
-static inline char const *
+static char const *
 sys_reset_uid_gid (void)
 {
   uid_t uid = getuid ();
