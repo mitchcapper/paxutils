@@ -37,17 +37,17 @@ struct tar_stat_info
   unsigned long atime_nsec;
   unsigned long mtime_nsec;
   unsigned long ctime_nsec;
-  
+
   off_t archive_file_size;  /* Size of file as stored in the archive.
 			       Equals stat.st_size for non-sparse files */
 
-  bool   is_sparse;         /* Is the file sparse */ 
-  
+  bool   is_sparse;         /* Is the file sparse */
+
   size_t sparse_map_avail;  /* Index to the first unused element in
 			       sparse_map array. Zero if the file is
 			       not sparse */
   size_t sparse_map_size;   /* Size of the sparse map */
-  struct sp_array *sparse_map; 
+  struct sp_array *sparse_map;
 };
 
 
@@ -58,7 +58,7 @@ int rmt_close (int handle);
 size_t rmt_read (int handle, char *buffer, size_t length);
 size_t rmt_write (int handle, char *buffer, size_t length);
 off_t rmt_lseek (int handle, off_t offset, int whence);
-int rmt_ioctl (int handle, int operation, char *argument);
+int rmt_ioctl (int handle, unsigned long int operation, char *argument);
 
 
 /* Tar-specific functions */
@@ -66,4 +66,3 @@ void tar_archive_create (paxbuf_t *pbuf, const char *filename,
   		         int remote, int mode, size_t bfactor);
 void tar_set_rmt (paxbuf_t pbuf, const char *rmt);
 void tar_set_rsh (paxbuf_t pbuf, const char *rsh);
-

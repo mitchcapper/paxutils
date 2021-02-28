@@ -676,7 +676,7 @@ rmt_lseek (int handle, off_t offset, int whence)
 /* Perform a raw tape operation on remote tape connection HANDLE.
    Return the results of the ioctl, or -1 on error.  */
 int
-rmt_ioctl (int handle, int operation, char *argument)
+rmt_ioctl (int handle, unsigned long int operation, char *argument)
 {
   switch (operation)
     {

@@ -25,7 +25,7 @@ int rmt_close__ (int);
 size_t rmt_read__ (int, char *, size_t);
 size_t rmt_write__ (int, char *, size_t);
 off_t rmt_lseek__ (int, off_t, int);
-int rmt_ioctl__ (int, int, void *);
+int rmt_ioctl__ (int, unsigned long int, void *);
 
 extern bool force_local_option;
 

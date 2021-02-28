@@ -656,7 +656,7 @@ rmt_lseek__ (int handle, off_t offset, int whence)
 /* Perform a raw tape operation on remote tape connection HANDLE.
    Return the results of the ioctl, or -1 on error.  */
 int
-rmt_ioctl__ (int handle, int operation, void *argument)
+rmt_ioctl__ (int handle, unsigned long int operation, void *argument)
 {
   switch (operation)
     {
@@ -674,7 +674,6 @@ rmt_ioctl__ (int handle, int operation, void *argument)
 
 	/* MTIOCTOP is the easy one.  Nothing is transferred in binary.  */
 
-	verify (EXPR_SIGNED (mtop->mt_count));
 	intmax_t count = mtop->mt_count;
 	sprintf (command_buffer, "I%d\n%jd\n", mtop->mt_op, count);
 	if (do_command (handle, command_buffer) == -1)
