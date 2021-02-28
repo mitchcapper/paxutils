@@ -3,6 +3,7 @@
 
 argp
 argp-version-etc
+c-ctype
 dirname
 error
 fileblocks
