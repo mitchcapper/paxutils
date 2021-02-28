@@ -43,13 +43,16 @@ fatal_exit (void)
 }
 
 void
-dump (unsigned char *buf, size_t size)
+dump (char *buf, size_t size)
 {
   while (size)
     {
       int i;
       for (i = 0; i < 16 && size; i++, size--, buf++)
-	printf ("%02X ", *buf);
+	{
+	  unsigned char ch = *buf;
+	  printf ("%02X ", ch);
+	}
       printf ("\n");
     }
 }

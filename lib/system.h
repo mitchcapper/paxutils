@@ -23,13 +23,6 @@
 
 #include <alloca.h>
 
-#ifndef __attribute__
-/* This feature is available in gcc versions 2.5 and later.  */
-# if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5) || __STRICT_ANSI__
-#  define __attribute__(spec) /* empty */
-# endif
-#endif
-
 #include <sys/types.h>
 #include <ctype.h>
 
@@ -483,7 +476,7 @@ sys_reset_uid_gid (void)
   struct passwd *pw;
   uid_t uid = getuid ();
   gid_t gid = getgid ();
-  
+
   if ((pw = getpwuid (uid)) == NULL)
     {
       FATAL_ERROR ((0, errno, "%s(%lu)", "getpwuid", (unsigned long)uid));
