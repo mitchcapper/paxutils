@@ -353,6 +353,29 @@ encode_oflag (char *buf, int oflag)
   if (oflag & O_TRUNC) strcat (buf, "|O_TRUNC");
 }
 
+/* Reset user and group IDs to be those of the real user.
+   Return NULL on success, a failing syscall name (setting errno) on error.  */
+static char const *
+sys_reset_uid_gid (void)
+{
+#if !MSDOS
+  uid_t uid = getuid ();
+  gid_t gid = getgid ();
+  struct passwd *pw = getpwuid (uid);
+
+  if (!pw)
+    return "getpwuid";
+  if (initgroups (pw->pw_name, gid) != 0)
+    return "initgroups";
+  if (gid != getegid () && setgid (gid) != 0 && errno != EPERM)
+    return "setgid";
+  if (uid != geteuid () && setuid (uid) != 0 && errno != EPERM)
+    return "setuid";
+#endif
+
+  return NULL;
+}
+
 /* Open a file (a magnetic tape device?) on the system specified in
    FILE_NAME, as the given user. FILE_NAME has the form `[USER@]HOST:FILE'.
    OPEN_MODE is O_RDONLY, O_WRONLY, etc.  If successful, return the

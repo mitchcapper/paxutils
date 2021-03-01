@@ -465,28 +465,10 @@ char *getenv ();
 # define SET_BINARY_MODE(arc) setmode(arc, O_BINARY)
 # define mkdir(file, mode) (mkdir) (file)
 # define TTY_NAME "con"
-# define sys_reset_uid_gid()
 #else
 # define SET_BINARY_MODE(arc)
 # define TTY_NAME "/dev/tty"
 # include <paxlib.h>
-static char const *
-sys_reset_uid_gid (void)
-{
-  uid_t uid = getuid ();
-  gid_t gid = getgid ();
-  struct passwd *pw = getpwuid (uid);
-
-  if (!pw)
-    return "getpwuid";
-  if (initgroups (pw->pw_name, gid))
-    return "initgroups";
-  if (gid != getegid () && setgid (gid) && errno != EPERM)
-    return "setgid";
-  if (uid != geteuid () && setuid (uid) && errno != EPERM)
-    return "setuid";
-  return NULL;
-}
 #endif
 
 #if XENIX
