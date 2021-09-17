@@ -657,7 +657,7 @@ rmt_write__ (int handle, char *buffer, size_t length)
 off_t
 rmt_lseek__ (int handle, off_t offset, int whence)
 {
-  char command_buffer[sizeof "L\n0\n" + INT_STRLEN_BOUND (+offset)];
+  char command_buffer[sizeof "L\n0\n" + INT_STRLEN_BOUND (offset)];
 
   switch (whence)
     {
@@ -691,8 +691,8 @@ rmt_ioctl__ (int handle, unsigned long int operation, void *argument)
     case MTIOCTOP:
       {
 	struct mtop *mtop = argument;
-	enum { oplen = INT_STRLEN_BOUND (+mtop->mt_op) };
-	enum { countlen = INT_STRLEN_BOUND (+mtop->mt_count) };
+	enum { oplen = INT_STRLEN_BOUND (mtop->mt_op) };
+	enum { countlen = INT_STRLEN_BOUND (mtop->mt_count) };
 	char command_buffer[sizeof "I\n\n" + oplen + countlen];
 
 	/* MTIOCTOP is the easy one.  Nothing is transferred in binary.  */
