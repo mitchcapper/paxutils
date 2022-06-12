@@ -1,6 +1,6 @@
 # This file is part of GNU paxutils
 #
-# Copyright (C) 2005, 2007, 2009 Free Software Foundation, Inc.
+# Copyright (C) 2005-2022 Free Software Foundation, Inc.
 #
 # Written by Sergey Poznyakoff
 #
@@ -33,6 +33,8 @@ libpax_a_SOURCES = \
  paxlib.h\
  tarbuf.c\
  rtape.c
+
+EXTRA_DIST = DISTFILES
 
 BUILT_SOURCES=localedir.h
 localedir = $(datadir)/locale

@@ -1,6 +1,6 @@
 # This file is part of GNU paxutils
 #
-# Copyright (c) 2005, 2007, 2009 Free Software Foundation, Inc.
+# Copyright (c) 2005-2022 Free Software Foundation, Inc.
 #
 # Written by Sergey Poznyakoff
 #
@@ -21,7 +21,12 @@
 
 ACLOCAL_AMFLAGS = -I am -I m4
 
-EXTRA_DIST = Make.rules
+EXTRA_DIST = \
+  DISTFILES Make.rules \
+  am/DISTFILES \
+  doc/DISTFILES doc/genfile.texi doc/rmt.8 \
+  lib/DISTFILES lib/rmt.h lib/rtapelib.c lib/system.h lib/system-ioctl.h \
+  tests/DISTFILES tests/genfile.c tests/argcv.c tests/argcv.h
 
 SUBDIRS = gnu paxlib paxtest rmt po
 
@@ -31,5 +36,4 @@ changelog_dir = .
 include Make.rules
 
 dist-hook:
-	$(MAKE) changelog_dir=$(distdir) make-ChangeLog
-
+	$(MAKE) changelog_dir=$(distdir) ChangeLog
