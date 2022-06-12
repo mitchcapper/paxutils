@@ -8,6 +8,7 @@ dirname
 error
 fileblocks
 full-write
+getline
 getopt-gnu
 gettext-h
 hash
