@@ -10,7 +10,7 @@ GNU paxutils aims to provide:
   3. pax implementation, conforming to POSIX standard.
 
 All three implementations will be built around a common (presumably
-shared) library. 
+shared) library.
 
 See files HISTORY and TODO for the information about background of GNU
 paxutils and its future plans.
@@ -34,7 +34,7 @@ File gnulib.modules contains a list of gnulib modules needed by
 exportable paxutils files. The build system of both projects uses this
 file to create a list of necessary gnulib modules.
 
-A similar file, build-aux/gnulib.modules, contains a list of gnulib
+A similar file, build-aux/paxlib.modules, contains a list of gnulib
 modules needed by paxutils itself. It is used by build-aux/bootstrap
 to bootstrap the package.
 
@@ -42,12 +42,15 @@ to bootstrap the package.
 
 Currently paxutils provides initial version of pax library, containing
 internal buffering support. The 'paxtest' utility is provided for
-testing the library. 
+testing the library.
 
 
 * Copying
 
-Copyright (C) 2005 Free Software Foundation, Inc.
+For any copyright year range specified as YYYY-ZZZZ in this package
+the range specifies every year in that closed interval.
+
+Copyright (C) 2005-2022 Free Software Foundation, Inc.
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the

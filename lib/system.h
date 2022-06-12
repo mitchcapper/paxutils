@@ -1,7 +1,6 @@
 /* System dependent definitions for GNU tar.
 
-   Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2003,
-   2004, 2005, 2006, 2007 Free Software Foundation, Inc.
+   Copyright 1994-2022 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -347,7 +346,7 @@ extern int errno;
 
 #define DEFAULT_ST_BLKSIZE 512
 
-#if !HAVE_ST_BLKSIZE
+#ifndef HAVE_STRUCT_STAT_ST_BLKSIZE
 # define ST_BLKSIZE(statbuf) DEFAULT_ST_BLKSIZE
 #else
 # define ST_BLKSIZE(statbuf) \
@@ -437,7 +436,7 @@ char *getenv ();
 #endif
 
 #include <time.h>
-#ifdef TIME_WITH_SYS_TIME
+#ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>
 #endif
 

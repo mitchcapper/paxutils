@@ -1,3 +1,8 @@
+# Configure paxutils.
+# Copyright 2009-2022 Free Software Foundation, Inc.
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
 
 AC_DEFUN([PU_RMT],[
   # Set LIB_SETSOCKOPT to -lnsl -lsocket if necessary.
@@ -16,11 +21,14 @@ AC_DEFUN([PU_RMT],[
   enable_rmt() {
     if test $ac_cv_header_sys_mtio_h = yes; then
       AC_CACHE_CHECK(for remote tape header files, pu_cv_header_rmt,
-        [AC_TRY_CPP([
-#if HAVE_SGTTY_H
-# include <sgtty.h>
-#endif
-#include <sys/socket.h>],
+        [AC_PREPROC_IFELSE(
+	   [AC_LANG_SOURCE(
+	      [[
+		#if HAVE_SGTTY_H
+		# include <sgtty.h>
+		#endif
+		#include <sys/socket.h>
+	      ]])],
       pu_cv_header_rmt=yes,
       pu_cv_header_rmt=no)])
       test $pu_cv_header_rmt = yes && PU_RMT_PROG='rmt$(EXEEXT)'
@@ -49,7 +57,7 @@ AC_DEFUN([PU_RMT],[
 
   AC_MSG_CHECKING([whether to build rmt])
   AC_ARG_WITH([rmt],
-              AC_HELP_STRING([--with-rmt=FILE],
+              AS_HELP_STRING([--with-rmt=FILE],
                              [Use FILE as the default `rmt' program. Do not build included copy of `rmt'.]),
               [case $withval in
 	       yes|no) AC_MSG_ERROR([Invalid argument to --with-rmt]);;

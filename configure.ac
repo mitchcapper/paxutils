@@ -1,6 +1,6 @@
 # This file is part of GNU paxutils
 #
-# Copyright (C) 2005, 2006, 2007 Free Software Foundation, Inc.
+# Copyright (C) 2005-2022 Free Software Foundation, Inc.
 #
 # GNU paxutils is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,7 +28,6 @@ AC_EXEEXT
 gl_EARLY
 AC_PROG_RANLIB
 AC_SYS_LARGEFILE
-AC_ISC_POSIX
 
 AC_CHECK_HEADERS(fcntl.h linux/fd.h memory.h net/errno.h \
   sgtty.h string.h \
@@ -43,27 +42,29 @@ AC_CHECK_HEADERS([sys/buf.h], [], [],
 #endif])
 
 AC_HEADER_SYS_WAIT
-AM_STDBOOL_H
 
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 AC_HEADER_STAT
-AC_HEADER_STDC
-AC_STRUCT_ST_BLKSIZE
+AC_CHECK_MEMBERS([struct stat.st_blksize])
+
 AC_STRUCT_ST_BLOCKS
 AC_MSG_CHECKING([for st_fstype string in struct stat])
 AC_CACHE_VAL(diff_cv_st_fstype_string,
-  [AC_TRY_COMPILE([#include <sys/types.h>
-#include <sys/stat.h>], [struct stat s; s.st_fstype[0] = 'x';],
-   diff_cv_st_fstype_string=yes,
-   diff_cv_st_fstype_string=no)])
+  [AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM(
+        [[#include <sys/types.h>
+	  #include <sys/stat.h>
+	]],
+	[[struct stat s; s.st_fstype[0] = 'x';]])],
+     [diff_cv_st_fstype_string=yes],
+     [diff_cv_st_fstype_string=no])])
 AC_MSG_RESULT($diff_cv_st_fstype_string)
 if test $diff_cv_st_fstype_string = yes; then
   AC_DEFINE(HAVE_ST_FSTYPE_STRING, 1,
     [Define if struct stat has a char st_fstype[] member.])
 fi
 
-AC_TYPE_SIGNAL
 AC_TYPE_MODE_T
 AC_TYPE_PID_T
 AC_TYPE_OFF_T
@@ -77,10 +78,6 @@ AC_CHECK_TYPE(dev_t, unsigned)
 AC_CHECK_TYPE(ino_t, unsigned)
 
 gl_INIT
-MU_DEBUG_MODE
-
-# gnulib modules
-paxutils_GNULIB
 
 PU_RMT
 PU_RTAPELIB
@@ -157,7 +154,7 @@ if test -z "$DEFAULT_ARCHIVE"; then
   DEFAULT_ARCHIVE=-
 else
   if test -z "`ls $DEFAULT_ARCHIVE 2>/dev/null`"; then
-    AC_MSG_WARN(DEFAULT_ARCHIVE \`$DEFAULT_ARCHIVE' not found on this system)
+    AC_MSG_WARN([DEFAULT_ARCHIVE '$DEFAULT_ARCHIVE' not found on this system])
   fi
   # FIXME: Look for DEFTAPE in <sys/mtio.h>.
   # FIXME: Let DEVICE_PREFIX be configured from the environment.
@@ -194,31 +191,14 @@ AC_DEFINE_UNQUOTED(DEFAULT_BLOCKING, $DEFAULT_BLOCKING,
   [Define to a number giving the default blocking size for archives.])
 AC_MSG_RESULT($DEFAULT_BLOCKING)
 
-# Iconv
-AM_ICONV
-AC_CHECK_HEADERS(iconv.h)
-AC_CHECK_TYPE(iconv_t,:,
-              AC_DEFINE(iconv_t, int,
-                        [Conversion descriptor type]),
-              [
-#ifdef HAVE_ICONV_H
-# include <iconv.h>
-#endif
-])
-
 # Gettext.
 AM_GNU_GETTEXT([external], [need-ngettext])
-AM_GNU_GETTEXT_VERSION(0.12.1)
-
-# Initialize the test suite.
-# AC_CONFIG_TESTDIR(tests)
-# AC_CONFIG_FILES([tests/Makefile tests/atlocal])
-AM_MISSING_PROG([AUTOM4TE], [autom4te])
+AM_GNU_GETTEXT_VERSION([0.21])
 
 AC_SUBST(BACKUP_LIBEXEC_SCRIPTS)
 AC_SUBST(BACKUP_SBIN_SCRIPTS)
 AC_ARG_ENABLE(backup-scripts,
-	      AC_HELP_STRING([--enable-backup-scripts],
+	      AS_HELP_STRING([--enable-backup-scripts],
                              [Create and install backup and restore scripts]),
               [case $enableval in
 	       yes) BACKUP_LIBEXEC_SCRIPTS='$(BACKUP_LIBEXEC_SCRIPTS_LIST)'
@@ -234,9 +214,10 @@ else
 fi
 
 
-AC_OUTPUT([Makefile\
+AC_CONFIG_FILES([Makefile\
            gnu/Makefile\
            paxlib/Makefile\
 	   rmt/Makefile\
            po/Makefile.in\
            paxtest/Makefile])
+AC_OUTPUT

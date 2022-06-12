@@ -1,4 +1,4 @@
-# List of gnulib modules needed for GNU paxutils.
+# List of gnulib modules needed for GNU paxutils itself.
 # A module name per line. Empty lines and comments are ignored.
 
 argp
@@ -9,8 +9,9 @@ error
 fileblocks
 full-write
 getopt-gnu
-gettext
+gettext-h
 hash
+iconv
 inttostr
 progname
 quote

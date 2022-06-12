@@ -1,4 +1,4 @@
-# List of gnulib modules needed for GNU paxutils.
+# List of gnulib modules needed by exportable paxutils files.
 # A module name per line. Empty lines and comments are ignored.
 
 closeout
@@ -6,7 +6,7 @@ configmake
 dirname
 fseeko
 full-write
-gettext
+gettext-h
 getopt-gnu
 gitlog-to-changelog
 inttostr

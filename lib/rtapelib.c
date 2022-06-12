@@ -1,7 +1,6 @@
 /* Functions for communicating with a remote tape drive.
 
-   Copyright (C) 1988, 1992, 1994, 1996, 1997, 1999, 2000, 2001, 2004,
-   2005, 2006, 2007 Free Software Foundation, Inc.
+   Copyright 1988-2022 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -69,10 +68,6 @@
 /* FIXME: Size of buffers for reading and writing commands to rmt.  */
 #define COMMAND_BUFFER_SIZE 64
 
-#ifndef RETSIGTYPE
-# define RETSIGTYPE void
-#endif
-
 /* FIXME: Maximum number of simultaneous remote tape connections.  */
 #define MAXUNIT	4
 
@@ -122,7 +117,7 @@ do_command (int handle, const char *buffer)
   /* Save the current pipe handler and try to make the request.  */
 
   size_t length = strlen (buffer);
-  RETSIGTYPE (*pipe_handler) (int) = signal (SIGPIPE, SIG_IGN);
+  void (*pipe_handler) (int) = signal (SIGPIPE, SIG_IGN);
   ssize_t written = full_write (WRITE_SIDE (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
 
@@ -626,7 +621,7 @@ size_t
 rmt_write__ (int handle, char *buffer, size_t length)
 {
   char command_buffer[sizeof "W\n" + INT_STRLEN_BOUND (size_t)];
-  RETSIGTYPE (*pipe_handler) (int);
+  void (*pipe_handler) (int);
   size_t written;
 
   sprintf (command_buffer, "W%zu\n", length);
