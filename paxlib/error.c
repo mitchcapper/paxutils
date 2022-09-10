@@ -268,7 +268,7 @@ seek_warn (char const *name)
 void
 seek_warn_details (char const *name, off_t offset)
 {
-  int off = offset;
+  intmax_t off = offset;
   int e = errno;
   WARN ((0, e, _("%s: Warning: Cannot seek to %jd"),
 	 quotearg_colon (name), off));
