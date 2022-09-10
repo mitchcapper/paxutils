@@ -401,7 +401,6 @@ void *malloc ();
 char *getenv ();
 #endif
 
-#include <stdbool.h>
 #include <stddef.h>
 
 #include <stdio.h>
