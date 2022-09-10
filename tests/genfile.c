@@ -618,16 +618,20 @@ generate_sparse_file (int argc, char **argv)
 /* Status Mode */
 
 #define PRINT_INT(expr) \
-  if (EXPR_SIGNED (expr)) \
+  do \
     { \
-      intmax_t printval = expr; \
-      printf ("%jd", printval); \
+      if (EXPR_SIGNED (expr)) \
+	{ \
+	  intmax_t printval = expr; \
+	  printf ("%jd", printval); \
+	} \
+      else \
+	{ \
+	  uintmax_t printval = expr; \
+	  printf ("%ju", printval); \
+	} \
     } \
-  else \
-    { \
-      uintmax_t printval = expr; \
-      printf ("%ju", printval); \
-    }
+  while (false)
 
 void
 print_time (time_t t)
