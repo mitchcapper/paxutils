@@ -22,7 +22,6 @@
 #include <getopt.h>
 #include <full-write.h>
 #include <configmake.h>
-#include <inttostr.h>
 #include <error.h>
 #include <progname.h>
 #include <c-ctype.h>
@@ -111,8 +110,7 @@ rmt_write (const char *fmt, ...)
 static void
 rmt_reply (uintmax_t code)
 {
-  char buf[UINTMAX_STRSIZE_BOUND];
-  rmt_write ("A%s\n", umaxtostr (code, buf));
+  rmt_write ("A%ju\n", code);
 }
 
 static void
@@ -247,7 +245,7 @@ decode_open_flag (const char *mstr, int *pmode)
       while (mstr)
 	{
 	  int v;
-	  
+
 	  mstr = skip_ws (mstr);
 	  if (*mstr == 0)
 	    break;
@@ -260,7 +258,7 @@ decode_open_flag (const char *mstr, int *pmode)
 	    }
 
 	  mode |= v;
-	  
+
 	  if (*p && c_isblank (*p))
 	    p = skip_ws (p);
 	  if (*p == 0)
@@ -310,7 +308,7 @@ decode_open_flag (const char *mstr, int *pmode)
    In addition, a compined form is also allowed, i.e. a decimal mode followed
    by its symbolic representation.  In this case the symbolic representation
    is given preference.
-      
+
    Reply
    -----
    A0\n on success, E0\n<msg>\n on error.

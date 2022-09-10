@@ -598,7 +598,7 @@ rmt_read (int handle, char *buffer, size_t length)
   size_t rlen;
   size_t counter;
 
-  sprintf (command_buffer, "R%lu\n", (unsigned long) length);
+  sprintf (command_buffer, "R%zu\n", length);
   if (do_command (handle, command_buffer) == -1
       || (status = get_status (handle)) == SAFE_READ_ERROR)
     return SAFE_READ_ERROR;
@@ -625,7 +625,7 @@ rmt_write (int handle, char *buffer, size_t length)
   void (*pipe_handler) ();
   size_t written;
 
-  sprintf (command_buffer, "W%lu\n", (unsigned long) length);
+  sprintf (command_buffer, "W%zu\n", length);
   if (do_command (handle, command_buffer) == -1)
     return 0;
 
@@ -654,16 +654,7 @@ off_t
 rmt_lseek (int handle, off_t offset, int whence)
 {
   char command_buffer[COMMAND_BUFFER_SIZE];
-  char operand_buffer[UINTMAX_STRSIZE_BOUND];
-  uintmax_t u = offset < 0 ? - (uintmax_t) offset : (uintmax_t) offset;
-  char *p = operand_buffer + sizeof operand_buffer;
-
-  *--p = 0;
-  do
-    *--p = '0' + (int) (u % 10);
-  while ((u /= 10) != 0);
-  if (offset < 0)
-    *--p = '-';
+  intmax_t off = offset;
 
   switch (whence)
     {
@@ -683,7 +674,7 @@ rmt_lseek (int handle, off_t offset, int whence)
       abort ();
     }
 
-  sprintf (command_buffer, "L%s\n%d\n", p, whence);
+  sprintf (command_buffer, "L%jd\n%d\n", off, whence);
 
   if (do_command (handle, command_buffer) == -1)
     return -1;
@@ -705,24 +696,13 @@ rmt_ioctl (int handle, unsigned long int operation, char *argument)
 #ifdef MTIOCTOP
     case MTIOCTOP:
       {
+	struct mtop *arg = (struct mtop *) argument;
 	char command_buffer[COMMAND_BUFFER_SIZE];
-	char operand_buffer[UINTMAX_STRSIZE_BOUND];
-	uintmax_t u = (((struct mtop *) argument)->mt_count < 0
-		       ? - (uintmax_t) ((struct mtop *) argument)->mt_count
-		       : (uintmax_t) ((struct mtop *) argument)->mt_count);
-	char *p = operand_buffer + sizeof operand_buffer;
-
-        *--p = 0;
-	do
-	  *--p = '0' + (int) (u % 10);
-	while ((u /= 10) != 0);
-	if (((struct mtop *) argument)->mt_count < 0)
-	  *--p = '-';
+	intmax_t count = arg->mt_count;
 
 	/* MTIOCTOP is the easy one.  Nothing is transferred in binary.  */
 
-	sprintf (command_buffer, "I%d\n%s\n",
-		 ((struct mtop *) argument)->mt_op, p);
+	sprintf (command_buffer, "I%d\n%jd\n", arg->mt_op, count);
 	if (do_command (handle, command_buffer) == -1)
 	  return -1;
 

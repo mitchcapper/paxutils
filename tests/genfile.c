@@ -26,7 +26,6 @@
 #include <argp.h>
 #include <argcv.h>
 #include <parse-datetime.h>
-#include <inttostr.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <c-ctype.h>
@@ -71,7 +70,7 @@ static off_t seek_offset = 0;
 static enum pattern pattern = DEFAULT_PATTERN;
 
 /* Next checkpoint number */
-size_t checkpoint;
+uintmax_t checkpoint;
 
 enum genfile_mode
   {
@@ -268,8 +267,11 @@ verify_file (char *file_name)
 	error (0, errno, _("stat(%s) failed"), file_name);
 
       if (st.st_size != file_length + seek_offset)
-	error (EXIT_FAILURE, 0, _("requested file length %lu, actual %lu"),
-	       (unsigned long)st.st_size, (unsigned long)file_length);
+	{
+	  intmax_t requested = st.st_size, actual = file_length;
+	  error (EXIT_FAILURE, 0, _("requested file length %jd, actual %jd"),
+		 requested, actual);
+	}
 
       if (!quiet && mode == mode_sparse && !ST_IS_SPARSE (st))
 	error (EXIT_UNAVAILABLE, 0, _("created file is not sparse"));
@@ -279,7 +281,7 @@ verify_file (char *file_name)
 struct action
 {
   struct action *next;
-  size_t checkpoint;
+  uintmax_t checkpoint;
   int action;
   char *name;
   off_t size;
@@ -335,7 +337,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case 'q':
       quiet = 1;
       break;
-      
+
     case 's':
       mode = mode_sparse;
       break;
@@ -363,7 +365,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       {
 	char *p;
 
-	checkpoint = strtoul (arg, &p, 0);
+	checkpoint = strtoumax (arg, &p, 0);
 	if (*p)
 	  argp_error (state, _("Error parsing number near `%s'"), p);
       }
@@ -536,7 +538,7 @@ make_fragment (int fd, char *offstr, char *mapstr)
 	  for (i = 0; i < block_size; i++)
 	    buffer[i] = i & 255;
 	  break;
-	  
+
 	case ZEROS_PATTERN:
 	  memset (buffer, 0, block_size);
 	  break;
@@ -544,7 +546,7 @@ make_fragment (int fd, char *offstr, char *mapstr)
 
       if (lseek (fd, displ, SEEK_CUR) == -1)
 	error (EXIT_FAILURE, errno, "lseek");
-      
+
       for (; n; n--)
 	{
 	  if (write (fd, buffer, block_size) != block_size)
@@ -590,7 +592,7 @@ generate_sparse_file (int argc, char **argv)
 
 	      while (n > 0 && c_isspace (buf[n-1]))
 		buf[--n] = 0;
-	      
+
 	      n = strcspn (buf, " \t");
 	      buf[n++] = 0;
 	      while (buf[n] && c_isblank (buf[n]))
@@ -615,6 +617,18 @@ generate_sparse_file (int argc, char **argv)
 
 /* Status Mode */
 
+#define PRINT_INT(expr) \
+  if (EXPR_SIGNED (expr)) \
+    { \
+      intmax_t printval = expr; \
+      printf ("%jd", printval); \
+    } \
+  else \
+    { \
+      uintmax_t printval = expr; \
+      printf ("%ju", printval); \
+    }
+
 void
 print_time (time_t t)
 {
@@ -628,7 +642,6 @@ print_stat (const char *name)
 {
   char *fmt, *p;
   struct stat st;
-  char buf[UINTMAX_STRSIZE_BOUND];
 
   if (stat (name, &st))
     {
@@ -644,18 +657,18 @@ print_stat (const char *name)
       if (strcmp (p, "name") == 0)
 	printf ("%s", name);
       else if (strcmp (p, "dev") == 0)
-	printf ("%lu", (unsigned long) st.st_dev);
+	PRINT_INT (st.st_dev);
       else if (strcmp (p, "ino") == 0)
-	printf ("%lu", (unsigned long) st.st_ino);
+	PRINT_INT (st.st_ino);
       else if (strncmp (p, "mode", 4) == 0)
 	{
-	  unsigned val = st.st_mode;
+	  uintmax_t val = st.st_mode;
 
 	  if (ispunct ((unsigned char) p[4]))
 	    {
 	      char *q;
 
-	      val &= strtoul (p + 5, &q, 8);
+	      val &= strtoumax (p + 5, &q, 8);
 	      if (*q)
 		{
 		  printf ("\n");
@@ -667,30 +680,30 @@ print_stat (const char *name)
 	      printf ("\n");
 	      error (EXIT_USAGE, 0, _("Unknown field `%s'"), p);
 	    }
-	  printf ("%0o", val);
+	  printf ("%0jo", val);
 	}
       else if (strcmp (p, "nlink") == 0)
-	printf ("%lu", (unsigned long) st.st_nlink);
+	PRINT_INT (st.st_nlink);
       else if (strcmp (p, "uid") == 0)
-	printf ("%ld", (long unsigned) st.st_uid);
+	PRINT_INT (st.st_uid);
       else if (strcmp (p, "gid") == 0)
-	printf ("%lu", (unsigned long) st.st_gid);
+	PRINT_INT (st.st_gid);
       else if (strcmp (p, "size") == 0)
-	printf ("%s", umaxtostr (st.st_size, buf));
+	PRINT_INT (st.st_size);
       else if (strcmp (p, "blksize") == 0)
-	printf ("%s", umaxtostr (st.st_blksize, buf));
+	PRINT_INT (st.st_blksize);
       else if (strcmp (p, "blocks") == 0)
-	printf ("%s", umaxtostr (st.st_blocks, buf));
+	PRINT_INT (st.st_blocks);
       else if (strcmp (p, "atime") == 0)
-	printf ("%lu", (unsigned long) st.st_atime);
+	PRINT_INT (st.st_atime);
       else if (strcmp (p, "atimeH") == 0)
 	print_time (st.st_atime);
       else if (strcmp (p, "mtime") == 0)
-	printf ("%lu", (unsigned long) st.st_mtime);
+	PRINT_INT (st.st_mtime);
       else if (strcmp (p, "mtimeH") == 0)
 	print_time (st.st_mtime);
       else if (strcmp (p, "ctime") == 0)
-	printf ("%lu", (unsigned long) st.st_ctime);
+	PRINT_INT (st.st_ctime);
       else if (strcmp (p, "ctimeH") == 0)
 	print_time (st.st_ctime);
       else if (strcmp (p, "sparse") == 0)
@@ -715,7 +728,7 @@ void
 exec_checkpoint (struct action *p)
 {
   if (verbose)
-    printf ("processing checkpoint %lu\n", (unsigned long) p->checkpoint);
+    printf ("processing checkpoint %ju\n", p->checkpoint);
   switch (p->action)
     {
     case OPT_TOUCH:
@@ -788,7 +801,7 @@ exec_checkpoint (struct action *p)
 }
 
 void
-process_checkpoint (size_t n)
+process_checkpoint (uintmax_t n)
 {
   struct action *p, *prev = NULL;
 
@@ -830,7 +843,7 @@ exec_command (int argc, char **argv)
   char **xargv;
   int i;
   char checkpoint_option[80];
-  
+
   /* Insert --checkpoint option.
      FIXME: This assumes that argv does not use traditional tar options
      (without dash).
@@ -897,7 +910,8 @@ exec_command (int argc, char **argv)
 	      && memcmp (p, CHECKPOINT_TEXT, sizeof CHECKPOINT_TEXT - 1) == 0)
 	    {
 	      char *end;
-	      size_t n = strtoul (p + sizeof CHECKPOINT_TEXT - 1, &end, 10);
+	      uintmax_t n = strtoumax (p + sizeof CHECKPOINT_TEXT - 1,
+				       &end, 10);
 	      if (!(*end && !isspace ((unsigned char) *end)))
 		{
 		  process_checkpoint (n);

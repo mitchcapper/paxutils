@@ -21,8 +21,6 @@
 #ifndef _paxlib_h_
 #define _paxlib_h_
 
-#include <inttostr.h>
-
 /* Error reporting functions and definitions */
 
 /* Exit status for paxutils app.  Let's try to keep this list as simple as
@@ -121,9 +119,6 @@ void write_error_details (char const *, size_t, size_t);
 
 _Noreturn void pax_exit (void);
 _Noreturn void fatal_exit (void);
-
-#define STRINGIFY_BIGINT(i, b) umaxtostr (i, b)
-
 
 /* Name-related functions */
 bool removed_prefixes_p (void);

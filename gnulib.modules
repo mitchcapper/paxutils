@@ -9,7 +9,6 @@ full-write
 gettext-h
 getopt-gnu
 gitlog-to-changelog
-inttostr
 obstack
 parse-datetime
 quote
@@ -17,7 +16,9 @@ quotearg
 safe-read
 stdbool
 strerror
+strtoimax
 strtol
+strtoumax
 utimensat
 version-etc-fsf
 xalloc

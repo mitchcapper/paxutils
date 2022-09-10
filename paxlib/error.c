@@ -99,9 +99,10 @@ chmod_error_details (char const *name, mode_t mode)
 void
 chown_error_details (char const *name, uid_t uid, gid_t gid)
 {
+  uintmax_t u = uid, g = gid;
   int e = errno;
-  ERROR ((0, e, _("%s: Cannot change ownership to uid %lu, gid %lu"),
-	  quotearg_colon (name), (unsigned long) uid, (unsigned long) gid));
+  ERROR ((0, e, _("%s: Cannot change ownership to uid %ju, gid %ju"),
+	  quotearg_colon (name), u, g));
 }
 
 void
@@ -175,27 +176,25 @@ read_error (char const *name)
 void
 read_error_details (char const *name, off_t offset, size_t size)
 {
-  char buf[UINTMAX_STRSIZE_BOUND];
+  intmax_t off = offset;
   int e = errno;
   ERROR ((0, e,
-	  ngettext ("%s: Read error at byte %s, while reading %lu byte",
-		    "%s: Read error at byte %s, while reading %lu bytes",
+	  ngettext ("%s: Read error at byte %jd, while reading %zu byte",
+		    "%s: Read error at byte %jd, while reading %zu bytes",
 		    size),
-	  quotearg_colon (name), STRINGIFY_BIGINT (offset, buf),
-	  (unsigned long) size));
+	  quotearg_colon (name), off, size));
 }
 
 void
 read_warn_details (char const *name, off_t offset, size_t size)
 {
-  char buf[UINTMAX_STRSIZE_BOUND];
+  intmax_t off = offset;
   int e = errno;
   WARN ((0, e,
-	 ngettext ("%s: Warning: Read error at byte %s, while reading %lu byte",
-		   "%s: Warning: Read error at byte %s, while reading %lu bytes",
+	 ngettext ("%s: Warning: Read error at byte %jd, while reading %zu byte",
+		   "%s: Warning: Read error at byte %jd, while reading %zu bytes",
 		   size),
-	 quotearg_colon (name), STRINGIFY_BIGINT (offset, buf),
-	 (unsigned long) size));
+	 quotearg_colon (name), off, size));
 }
 
 void
@@ -207,14 +206,13 @@ read_fatal (char const *name)
 void
 read_fatal_details (char const *name, off_t offset, size_t size)
 {
-  char buf[UINTMAX_STRSIZE_BOUND];
+  intmax_t off = offset;
   int e = errno;
   FATAL_ERROR ((0, e,
-		ngettext ("%s: Read error at byte %s, while reading %lu byte",
-			  "%s: Read error at byte %s, while reading %lu bytes",
+		ngettext ("%s: Read error at byte %jd, while reading %zu byte",
+			  "%s: Read error at byte %jd, while reading %zu bytes",
 			  size),
-		quotearg_colon (name), STRINGIFY_BIGINT (offset, buf),
-		(unsigned long) size));
+		quotearg_colon (name), off, size));
 }
 
 void
@@ -256,11 +254,9 @@ seek_error (char const *name)
 void
 seek_error_details (char const *name, off_t offset)
 {
-  char buf[UINTMAX_STRSIZE_BOUND];
+  intmax_t off = offset;
   int e = errno;
-  ERROR ((0, e, _("%s: Cannot seek to %s"),
-	  quotearg_colon (name),
-	  STRINGIFY_BIGINT (offset, buf)));
+  ERROR ((0, e, _("%s: Cannot seek to %jd"), quotearg_colon (name), off));
 }
 
 void
@@ -272,11 +268,10 @@ seek_warn (char const *name)
 void
 seek_warn_details (char const *name, off_t offset)
 {
-  char buf[UINTMAX_STRSIZE_BOUND];
+  int off = offset;
   int e = errno;
-  WARN ((0, e, _("%s: Warning: Cannot seek to %s"),
-	 quotearg_colon (name),
-	 STRINGIFY_BIGINT (offset, buf)));
+  WARN ((0, e, _("%s: Warning: Cannot seek to %jd"),
+	 quotearg_colon (name), off));
 }
 
 void
@@ -348,10 +343,10 @@ write_error_details (char const *name, size_t status, size_t size)
     write_error (name);
   else
     ERROR ((0, 0,
-	    ngettext ("%s: Wrote only %lu of %lu byte",
-		      "%s: Wrote only %lu of %lu bytes",
+	    ngettext ("%s: Wrote only %zu of %zu byte",
+		      "%s: Wrote only %zu of %zu bytes",
 		      size),
-	    name, (unsigned long int) status, (unsigned long int) size));
+	    name, status, size));
 }
 
 void

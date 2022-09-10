@@ -13,14 +13,15 @@ getopt-gnu
 gettext-h
 hash
 iconv
-inttostr
 progname
 quote
 quotearg
 safe-read
 savedir
 stdbool
+strtoimax
 strtol
+strtoumax
 unlocked-io
 verify
 xalloc
