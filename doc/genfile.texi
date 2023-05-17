@@ -14,7 +14,7 @@ the testsuite, hence its name. However, new operation modes were being
 implemented as the testsuite grew more sophisticated, and now
 @command{genfile} is a multi-purpose instrument.
 
-    There are three basic operation modes:
+    There are four basic operation modes:
 
 @table @asis
 @item File Generation
@@ -24,6 +24,10 @@ generates data files.
 @item File Status
     In this mode @command{genfile} displays status of specified files.
 
+@item Set File Time
+    Set last access and modification times of files given in the
+command line.
+
 @item Synchronous Execution.
     In this mode @command{genfile} executes the given program with
 @option{--checkpoint} option and executes a set of actions when
@@ -31,9 +35,10 @@ specified checkpoints are reached.
 @end table
 
 @menu
-* Generate Mode::     File Generation Mode.
-* Status Mode::       File Status Mode.
-* Exec Mode::         Synchronous Execution mode.
+* Generate Mode::       File Generation Mode.
+* Status Mode::         File Status Mode.
+* Set File Time::       Set File Time Mode.
+* Exec Mode::           Synchronous Execution Mode.
 @end menu
 
 @node Generate Mode
@@ -278,6 +283,34 @@ directory:
 genfile --stat=name,atime *
 @end smallexample
 
+   By default, @command{genfile} follows symbolic links and returns
+information about files pointed to by them.  To get information about
+the symlink files themselves, use the @option{--no-dereference}
+(@option{-h}) option.
+
+@node Set File Time
+@appendixsec Set File Time
+@cindex Set File Time Mode, @command{genfile}
+    This mode is requested by the @option{--set-time} (@option{-t})
+command line option.  In this mode @command{genfile} operates
+similarly to the @command{touch} command: for each file listed in the
+command line, it sets its access and modification times to the current
+timestamp or to the value given with the @option{--date} option.  The
+@option{--date} option takes a date specification in
+an almost arbitrary format as its argument (@pxref{Date input
+formats}), e.g.:
+
+@example
+genfile --set-time --date='2 days ago' a b c
+@end example
+
+    By default, @command{genfile} follows symbolic links and sets
+times of the file they point to.  This can be changed by supplying the
+@option{--no-dereference} (@option{-h}) option: if it is given,
+@command{genfile} will change access and modification times of the
+symbolic link itself.  Notice, that not all operating systems allow
+this.
+
 @node Exec Mode
 @appendixsec Exec Mode
 
@@ -345,6 +378,14 @@ timestamps are changed to the current time, unless @option{--date}
 option was given, in which case they are changed to the specified
 time. Argument to @option{--date} option is a date specification in
 an almost arbitrary format (@pxref{Date input formats}).
+
+@item -h
+@itemx --no-dereference
+    Modifies the action of the @option{--touch} option.  If both
+options are given and @var{file} argument to the @option{--touch}
+names a symbolic link, @command{genfile} will modify access and
+modification times of the symbolic link file itself, instead the
+file the symlink points to.
 
 @item --exec @var{command}
     Execute given shell command.

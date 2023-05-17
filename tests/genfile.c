@@ -77,7 +77,8 @@ enum genfile_mode
     mode_generate,
     mode_sparse,
     mode_stat,
-    mode_exec
+    mode_exec,
+    mode_set_times
   };
 
 enum genfile_mode mode = mode_generate;
@@ -105,6 +106,9 @@ int verbose;
 
 /* Quiet mode */
 int quiet;
+
+/* Don't dereference symlinks (for --stat) */
+int no_dereference_option;
 
 const char *argp_program_version = "genfile (" PACKAGE ") " VERSION;
 const char *argp_program_bug_address = "<" PACKAGE_BUGREPORT ">";
@@ -154,6 +158,14 @@ static struct argp_option options[] = {
   {"stat", 'S', N_("FORMAT"), OPTION_ARG_OPTIONAL,
    N_("Print contents of struct stat for each given file. Default FORMAT is: ")
    DEFAULT_STAT_FORMAT,
+   GRP+1 },
+  {"no-dereference", 'h', NULL, 0,
+   N_("stat symbolic links instead of referenced files"),
+   GRP+1 },
+
+  {"set-times", 't', NULL, 0,
+   N_("Set access and modification times of the files to the time supplied"
+      " by --date option"),
    GRP+1 },
 
 #undef GRP
@@ -346,6 +358,14 @@ parse_opt (int key, char *arg, struct argp_state *state)
       mode = mode_stat;
       if (arg)
 	stat_format = arg;
+      break;
+
+    case 't':
+      mode = mode_set_times;
+      break;
+
+    case 'h':
+      no_dereference_option = 1;
       break;
 
     case 'r':
@@ -647,7 +667,7 @@ print_stat (const char *name)
   char *fmt, *p;
   struct stat st;
 
-  if (stat (name, &st))
+  if ((no_dereference_option ? lstat : stat) (name, &st))
     {
       error (0, errno, _("stat(%s) failed"), name);
       return;
@@ -725,6 +745,17 @@ print_stat (const char *name)
   free (fmt);
 }
 
+void
+set_times (char const *name)
+{
+  struct timespec ts[2];
+
+  ts[0] = ts[1] = touch_time;
+  if (utimensat (AT_FDCWD, name, ts, no_dereference_option ? AT_SYMLINK_NOFOLLOW : 0) != 0)
+    {
+      error (EXIT_FAILURE, errno, _("cannot set time on `%s'"), name);
+    }
+}
 
 /* Exec Mode */
 
@@ -740,7 +771,7 @@ exec_checkpoint (struct action *p)
 	struct timespec ts[2];
 
 	ts[0] = ts[1] = p->ts;
-	if (utimensat (AT_FDCWD, p->name, ts, 0) != 0)
+	if (utimensat (AT_FDCWD, p->name, ts, no_dereference_option ? AT_SYMLINK_NOFOLLOW : 0) != 0)
 	  {
 	    error (0, errno, _("cannot set time on `%s'"), p->name);
 	    break;
@@ -985,6 +1016,14 @@ main (int argc, char **argv)
 
       while (argc--)
 	print_stat (*argv++);
+      break;
+
+    case mode_set_times:
+      if (argc == 0)
+	error (EXIT_USAGE, 0, _("--set-times requires file names"));
+
+      while (argc--)
+	set_times (*argv++);
       break;
 
     case mode_sparse:
