@@ -360,7 +360,7 @@ sys_reset_uid_gid (void)
 
   if (!pw)
     return "getpwuid";
-  if (initgroups (pw->pw_name, gid) != 0)
+  if (initgroups (pw->pw_name, gid) != 0 && errno != EPERM)
     return "initgroups";
   if (gid != getegid () && setgid (gid) != 0 && errno != EPERM)
     return "setgid";
@@ -652,7 +652,7 @@ rmt_write__ (int handle, char *buffer, size_t length)
 off_t
 rmt_lseek__ (int handle, off_t offset, int whence)
 {
-  char command_buffer[sizeof "L\n0\n" + INT_STRLEN_BOUND (offset)];
+  char command_buffer[sizeof "L0\n\n" + INT_STRLEN_BOUND (offset)];
 
   switch (whence)
     {
@@ -662,8 +662,7 @@ rmt_lseek__ (int handle, off_t offset, int whence)
     default: abort ();
     }
 
-  intmax_t off = offset;
-  sprintf (command_buffer, "L%jd\n%d\n", off, whence);
+  sprintf (command_buffer, "L%d\n%jd\n", whence, (off_t) offset);
 
   if (do_command (handle, command_buffer) == -1)
     return -1;

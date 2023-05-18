@@ -365,7 +365,7 @@ sys_reset_uid_gid (void)
 
   if (!pw)
     return "getpwuid";
-  if (initgroups (pw->pw_name, gid) != 0)
+  if (initgroups (pw->pw_name, gid) != 0 && errno != EPERM)
     return "initgroups";
   if (gid != getegid () && setgid (gid) != 0 && errno != EPERM)
     return "setgid";
