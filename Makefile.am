@@ -21,12 +21,7 @@
 
 ACLOCAL_AMFLAGS = -I am -I m4
 
-EXTRA_DIST = \
-  DISTFILES Make.rules \
-  am/DISTFILES \
-  doc/DISTFILES doc/genfile.texi doc/rmt.8 \
-  lib/DISTFILES lib/rmt.h lib/rtapelib.c lib/system.h lib/system-ioctl.h \
-  tests/DISTFILES tests/genfile.c tests/argcv.c tests/argcv.h
+EXTRA_DIST = Make.rules
 
 SUBDIRS = gnu paxlib paxtest rmt po
 
@@ -37,3 +32,4 @@ include Make.rules
 
 dist-hook:
 	$(MAKE) changelog_dir=$(distdir) ChangeLog
+

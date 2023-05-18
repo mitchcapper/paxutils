@@ -34,8 +34,6 @@ libpax_a_SOURCES = \
  tarbuf.c\
  rtape.c
 
-EXTRA_DIST = DISTFILES
-
 BUILT_SOURCES=localedir.h
 localedir = $(datadir)/locale
 

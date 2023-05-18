@@ -23,8 +23,6 @@ EXTRA_PROGRAMS = rmt
 
 rmt_SOURCES = rmt.c
 
-EXTRA_DIST = DISTFILES
-
 AM_CPPFLAGS = -I$(top_srcdir)/gnu -I../ -I../gnu -I$(top_srcdir)/lib \
   -I$(top_srcdir)/paxlib
 
