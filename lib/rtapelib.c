@@ -353,7 +353,7 @@ encode_oflag (char *buf, int oflag)
 static char const *
 sys_reset_uid_gid (void)
 {
-#if !MSDOS
+#if !defined(MSDOS) && !defined(_WIN32)
   uid_t uid = getuid ();
   gid_t gid = getgid ();
   struct passwd *pw = getpwuid (uid);
@@ -497,8 +497,11 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 	errno = e;
 	return -1;
       }
-
+#ifdef _WIN32
+  return -1;
+#else
     status = fork ();
+#endif
     if (status == -1)
       {
 	int e = errno;

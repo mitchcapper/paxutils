@@ -245,11 +245,20 @@ extern int errno;
 # define S_IXOTH 0000001
 #endif
 
-#define MODE_WXUSR	(S_IWUSR | S_IXUSR)
-#define MODE_R		(S_IRUSR | S_IRGRP | S_IROTH)
-#define MODE_RW		(S_IWUSR | S_IWGRP | S_IWOTH | MODE_R)
-#define MODE_RWX	(S_IXUSR | S_IXGRP | S_IXOTH | MODE_RW)
-#define MODE_ALL	(S_ISUID | S_ISGID | S_ISVTX | MODE_RWX)
+#ifndef _WIN32
+#define MODE_WXUSR     (S_IWUSR | S_IXUSR)
+#define MODE_R         (S_IRUSR | S_IRGRP | S_IROTH)
+#define MODE_RW(S_IWUSR | S_IWGRP | S_IWOTH | MODE_R) //owner write group write, other write
+#define MODE_RWX       (S_IXUSR | S_IXGRP | S_IXOTH | MODE_RW)
+#define MODE_ALL       (S_ISUID | S_ISGID | S_ISVTX | MODE_RWX)
+#else
+#include <sys/stat.h>
+#define MODE_WXUSR		_S_IWRITE
+#define MODE_R			_S_IREAD
+#define MODE_RW			_S_IWRITE
+#define MODE_RWX		MODE_RW
+#define MODE_ALL		MODE_RWX
+#endif
 
 /* Include <unistd.h> before any preprocessor test of _POSIX_VERSION.  */
 #include <unistd.h>

@@ -35,10 +35,21 @@ extern bool force_local_option;
    Distributed File System (DFS).  However, when --force-local, a
    filename is never remote.  */
 
+#ifndef _WIN32
 #define _remdev(dev_name) \
   (!force_local_option && (rmt_dev_name__ = strchr (dev_name, ':')) \
    && rmt_dev_name__ > (dev_name) \
    && ! memchr (dev_name, '/', rmt_dev_name__ - (dev_name)))
+
+#else
+//for windows we need to make sure the colon is not a drive letter;0  sorry 1 char hosts you are screwed
+#define _remdev(dev_name) \
+  (!force_local_option && (strlen(dev_name) < 2 || dev_name[1] != ':') && (rmt_dev_name__ = strchr (dev_name, ':')) \
+   && rmt_dev_name__ > (dev_name) \
+   && ! memchr (dev_name, '/', rmt_dev_name__ - (dev_name)))
+
+#endif // !_WIN32
+
 
 #define _isrmt(fd) \
   ((fd) >= __REM_BIAS)
