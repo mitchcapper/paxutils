@@ -662,7 +662,7 @@ rmt_lseek__ (int handle, off_t offset, int whence)
     default: abort ();
     }
 
-  sprintf (command_buffer, "L%d\n%jd\n", whence, (off_t) offset);
+  sprintf (command_buffer, "L%d\n%jd\n", whence, (intmax_t) offset);
 
   if (do_command (handle, command_buffer) == -1)
     return -1;
