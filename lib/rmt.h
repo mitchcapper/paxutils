@@ -38,6 +38,7 @@ _GL_INLINE_HEADER_BEGIN
    Distributed File System (DFS).  However, when --force-local, a
    filename is never remote.  */
 
+#ifndef _WIN32
 RMT_INLINE bool
 _remdev (char const *__dev_name)
 {
@@ -48,6 +49,21 @@ _remdev (char const *__dev_name)
       return true;
   return false;
 }
+#else
+//for windows we need to make sure the colon is not a drive letter;0  sorry 1 char hosts you are screwed
+RMT_INLINE bool
+_remdev (char const *__dev_name)
+{
+  if (force_local_option || *__dev_name == ':' || (strlen(dev_name) > 2 && dev_name[1] == ':') )
+    return false;
+  for (char const *__p = __dev_name; *__p & (*__p != '/'); __p++)
+    if (*__p == ':')
+      return true;
+  return false;
+}
+
+#endif // !_WIN32
+
 
 enum { __REM_BIAS = 1 << 30 };
 
