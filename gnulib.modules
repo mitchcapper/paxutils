@@ -4,7 +4,7 @@
 closeout
 configmake
 dirname
-free
+free-posix
 fseeko
 full-write
 gettext-h
