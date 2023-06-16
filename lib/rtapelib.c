@@ -305,6 +305,13 @@ _rmt_rexec (char *host, char *user)
   return result;
 }
 
+#else
+
+/* GCC 13 misunderstands the dup2 trickery below.  */
+# if 13 <= __GNUC__
+#  pragma GCC diagnostic ignored "-Wanalyzer-fd-leak"
+# endif
+
 #endif /* WITH_REXEC */
 
 /* Place into BUF a string representing OFLAG, which must be suitable
@@ -487,17 +494,32 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 
     /* Set up the pipes for the `rsh' command, and fork.  */
 
-    if (pipe (to_remote[remote_pipe_number]) == -1
-	|| pipe (from_remote[remote_pipe_number]) == -1)
+    if (pipe (to_remote[remote_pipe_number]) < 0)
       {
 	free (file_name_copy);
+	return -1;
+      }
+
+    if (pipe (from_remote[remote_pipe_number]) < 0)
+      {
+	int e = errno;
+	close (to_remote[remote_pipe_number][PREAD]);
+	close (to_remote[remote_pipe_number][PWRITE]);
+	free (file_name_copy);
+	errno = e;
 	return -1;
       }
 
     status = fork ();
     if (status == -1)
       {
+	int e = errno;
+	close (from_remote[remote_pipe_number][PREAD]);
+	close (from_remote[remote_pipe_number][PWRITE]);
+	close (to_remote[remote_pipe_number][PREAD]);
+	close (to_remote[remote_pipe_number][PWRITE]);
 	free (file_name_copy);
+	errno = e;
 	return -1;
       }
 
