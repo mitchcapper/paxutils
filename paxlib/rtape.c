@@ -460,9 +460,7 @@ rmt_open (const char *file_name, int open_mode, int bias,
   READ_SIDE (remote_pipe_number) = _rmt_rexec (remote_host, remote_user);
   if (READ_SIDE (remote_pipe_number) < 0)
     {
-      int e = errno;
       free (file_name_copy);
-      errno = e;
       return -1;
     }
 
@@ -492,18 +490,14 @@ rmt_open (const char *file_name, int open_mode, int bias,
     if (pipe (to_remote[remote_pipe_number]) == -1
 	|| pipe (from_remote[remote_pipe_number]) == -1)
       {
-	int e = errno;
 	free (file_name_copy);
-	errno = e;
 	return -1;
       }
 
     status = fork ();
     if (status == -1)
       {
-	int e = errno;
 	free (file_name_copy);
-	errno = e;
 	return -1;
       }
 
@@ -560,10 +554,9 @@ rmt_open (const char *file_name, int open_mode, int bias,
     if (do_command (remote_pipe_number, command_buffer) == -1
 	|| get_status (remote_pipe_number) == -1)
       {
-	int e = errno;
 	free (command_buffer);
 	free (file_name_copy);
-	_rmt_shutdown (remote_pipe_number, e);
+	_rmt_shutdown (remote_pipe_number, errno);
 	return -1;
       }
     free (command_buffer);
