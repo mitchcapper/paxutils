@@ -165,7 +165,7 @@
 # include <grp.h>
 #endif
 
-#if MSDOS
+#if defined(MSDOS) || defined(_WIN32)
 # include <process.h>
 # define SET_BINARY_MODE(arc) setmode(arc, O_BINARY)
 # define mkdir(file, mode) (mkdir) (file)
