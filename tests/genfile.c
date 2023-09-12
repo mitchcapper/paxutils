@@ -688,7 +688,7 @@ print_stat (const char *name)
 	{
 	  uintmax_t val = st.st_mode;
 
-	  if (ispunct ((unsigned char) p[4]))
+	  if (c_ispunct (p[4]))
 	    {
 	      char *q;
 
@@ -933,12 +933,12 @@ exec_command (int argc, char **argv)
 
   while ((p = fgets (buf, sizeof buf, fp)))
     {
-      while (*p && !isspace ((unsigned char) *p) && *p != ':')
+      while (*p && !c_isspace (*p) && *p != ':')
 	p++;
 
       if (*p == ':')
 	{
-	  for (p++; *p && isspace ((unsigned char) *p); p++)
+	  for (p++; *p && c_isspace (*p); p++)
 	    ;
 
 	  if (*p
@@ -947,7 +947,7 @@ exec_command (int argc, char **argv)
 	      char *end;
 	      uintmax_t n = strtoumax (p + sizeof CHECKPOINT_TEXT - 1,
 				       &end, 10);
-	      if (!(*end && !isspace ((unsigned char) *end)))
+	      if (!(*end && !c_isspace (*end)))
 		{
 		  process_checkpoint (n);
 		  kill (pid, SIGUSR1);

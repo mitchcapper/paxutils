@@ -23,20 +23,6 @@
 #include <alloca.h>
 
 #include <sys/types.h>
-#include <ctype.h>
-
-/* IN_CTYPE_DOMAIN (C) is nonzero if the unsigned char C can safely be given
-   as an argument to <ctype.h> macros like `isspace'.  */
-#if STDC_HEADERS
-# define IN_CTYPE_DOMAIN(c) 1
-#else
-# define IN_CTYPE_DOMAIN(c) ((unsigned) (c) <= 0177)
-#endif
-
-#define ISDIGIT(c) ((unsigned) (c) - '0' <= 9)
-#define ISODIGIT(c) ((unsigned) (c) - '0' <= 7)
-#define ISPRINT(c) (IN_CTYPE_DOMAIN (c) && isprint (c))
-#define ISSPACE(c) (IN_CTYPE_DOMAIN (c) && isspace (c))
 
 /* Declare string and memory handling routines.  Take care that an ANSI
    string.h and pre-ANSI memory.h might conflict, and that memory.h and

@@ -19,8 +19,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include <ctype.h>
 
+#include <c-ctype.h>
 #include <argcv.h>
 
 /*
@@ -156,7 +156,7 @@ escaped_length (const char *str, int *quote)
 	  len += 2;
 	  *quote = 1;
 	}
-      else if (isprint ((unsigned char) *str))
+      else if (c_isprint (*str))
 	len++;
       else if (argcv_escape_char (*str) != -1)
 	len += 2;
@@ -252,7 +252,7 @@ escape_copy (char *dst, const char *src)
 	  *dst++ = '\\';
 	  *dst++ = '"';
 	}
-      else if (*src != '\t' && isprint ((unsigned char) *src))
+      else if (*src != '\t' && c_isprint (*src))
 	*dst++ = *src;
       else
 	{
@@ -371,7 +371,7 @@ argcv_string (int argc, char **argv, char **pstring)
 	buffer[j++] = '"';
     }
 
-  for (; j > 0 && isspace ((unsigned char) buffer[j - 1]); j--)
+  for (; j > 0 && c_isspace (buffer[j - 1]); j--)
     ;
   buffer[j] = 0;
   if (pstring)
