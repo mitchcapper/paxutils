@@ -20,7 +20,7 @@ AC_INIT([GNU paxutils], [0.0.1], [bug-paxutils@gnu.org])
 AC_CONFIG_SRCDIR([paxtest/paxtest.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
-AC_PREREQ([2.64])
+AC_PREREQ([2.70])
 AM_INIT_AUTOMAKE([1.8 gnits dist-bzip2 dist-shar std-options])
 
 AC_PROG_CC
@@ -29,23 +29,19 @@ gl_EARLY
 AC_PROG_RANLIB
 AC_SYS_LARGEFILE
 
-AC_CHECK_HEADERS(fcntl.h linux/fd.h memory.h net/errno.h \
-  sgtty.h string.h \
+AC_CHECK_HEADERS([
+  sgtty.h \
   sys/param.h sys/device.h sys/gentape.h \
-  sys/inet.h sys/io/trioctl.h \
+  sys/io/trioctl.h \
   sys/mtio.h sys/tprintf.h sys/tape.h \
-  unistd.h locale.h)
+])
 
 AC_CHECK_HEADERS([sys/buf.h], [], [],
 [#if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif])
 
-AC_HEADER_SYS_WAIT
-
-AC_HEADER_DIRENT
 AC_HEADER_MAJOR
-AC_HEADER_STAT
 AC_CHECK_MEMBERS([struct stat.st_blksize])
 
 AC_STRUCT_ST_BLOCKS
@@ -83,7 +79,7 @@ PU_RMT
 PU_RTAPELIB
 PU_SYSTEM
 
-AC_CHECK_FUNCS(fsync lstat mkfifo readlink symlink setlocale)
+AC_CHECK_FUNCS([mkfifo])
 AC_CHECK_DECLS([getgrgid],,, [#include <grp.h>])
 AC_CHECK_DECLS([getpwuid],,, [#include <pwd.h>])
 
@@ -99,8 +95,6 @@ tar_save_LIBS=$LIBS
   esac
   AC_SUBST(LIB_SETSOCKOPT)
 LIBS=$tar_save_LIBS
-
-AC_REPLACE_FUNCS(waitpid)
 
 AC_CACHE_CHECK(for remote shell, tar_cv_path_RSH,
   [if test -n "$RSH"; then

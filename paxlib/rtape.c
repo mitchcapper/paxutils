@@ -37,21 +37,6 @@
 #include <full-write.h>
 #include "localedir.h"
 
-/* Try hard to get EOPNOTSUPP defined.  486/ISC has it in net/errno.h,
-   3B2/SVR3 has it in sys/inet.h.  Otherwise, use ENOSYS. */
-
-#ifndef EOPNOTSUPP
-# if HAVE_NET_ERRNO_H
-#  include <net/errno.h>
-# endif
-# if HAVE_SYS_INET_H
-#  include <sys/inet.h>
-# endif
-# ifndef EOPNOTSUPP
-#  define EOPNOTSUPP ENOSYS
-# endif
-#endif
-
 #include <signal.h>
 
 #if HAVE_NETDB_H

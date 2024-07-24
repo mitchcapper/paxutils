@@ -5,7 +5,9 @@ argp
 argp-version-etc
 c-ctype
 dirname
+errno
 error
+fcntl-h
 fileblocks
 full-write
 getline
@@ -13,13 +15,15 @@ getopt-gnu
 gettext-h
 hash
 iconv
+limits-h
+lstat
 progname
 quote
 quotearg
 safe-read
 savedir
 stdbool
-strtoimax
+stdlib
 strtol
 strtoumax
 unlocked-io

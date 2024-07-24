@@ -1,23 +1,25 @@
 # List of gnulib modules needed by exportable paxutils files.
 # A module name per line. Empty lines and comments are ignored.
 
-closeout
-configmake
 dirname
+errno
+fcntl-h
 free-posix
 fseeko
 full-write
 gettext-h
 getopt-gnu
 gitlog-to-changelog
+limits-h
+lstat
 obstack
 parse-datetime
 quote
 quotearg
 safe-read
 stdbool
+stdlib
 strerror
-strtoimax
 strtol
 strtoumax
 utimensat

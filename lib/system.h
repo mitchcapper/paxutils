@@ -21,114 +21,12 @@
 #endif
 
 #include <alloca.h>
-
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
 #include <sys/types.h>
 
-/* Declare string and memory handling routines.  Take care that an ANSI
-   string.h and pre-ANSI memory.h might conflict, and that memory.h and
-   strings.h conflict on some systems.  */
-
-#if STDC_HEADERS || HAVE_STRING_H
-# include <string.h>
-# if !STDC_HEADERS && HAVE_MEMORY_H
-#  include <memory.h>
-# endif
-#else
-# include <strings.h>
-# ifndef strchr
-#  define strchr index
-# endif
-# ifndef strrchr
-#  define strrchr rindex
-# endif
-# ifndef memcpy
-#  define memcpy(d, s, n) bcopy ((char const *) (s), (char *) (d), n)
-# endif
-# ifndef memcmp
-#  define memcmp(a, b, n) bcmp ((char const *) (a), (char const *) (b), n)
-# endif
-#endif
-
-/* Declare errno.  */
-
-#include <errno.h>
-#ifndef errno
-extern int errno;
-#endif
-
-/* Declare open parameters.  */
-
-#if HAVE_FCNTL_H
-# include <fcntl.h>
-#else
-# include <sys/file.h>
-#endif
-				/* Pick only one of the next three: */
-#ifndef O_RDONLY
-# define O_RDONLY	0	/* only allow read */
-#endif
-#ifndef O_WRONLY
-# define O_WRONLY	1	/* only allow write */
-#endif
-#ifndef O_RDWR
-# define O_RDWR		2	/* both are allowed */
-#endif
-#ifndef O_ACCMODE
-# define O_ACCMODE (O_RDONLY | O_RDWR | O_WRONLY)
-#endif
-				/* The rest can be OR-ed in to the above: */
-#ifndef O_CREAT
-# define O_CREAT	8	/* create file if needed */
-#endif
-#ifndef O_EXCL
-# define O_EXCL		16	/* file cannot already exist */
-#endif
-#ifndef O_TRUNC
-# define O_TRUNC	32	/* truncate file on open */
-#endif
-
-#ifndef O_BINARY
-# define O_BINARY 0
-#endif
-#ifndef O_DIRECTORY
-# define O_DIRECTORY 0
-#endif
-#ifndef O_NOATIME
-# define O_NOATIME 0
-#endif
-#ifndef O_NONBLOCK
-# define O_NONBLOCK 0
-#endif
-
-/* Declare file status routines and bits.  */
-
 #include <sys/stat.h>
-
-#if !HAVE_LSTAT && !defined lstat
-# define lstat stat
-#endif
-
-#if STX_HIDDEN && !_LARGE_FILES /* AIX */
-# ifdef stat
-#  undef stat
-# endif
-# define stat(file_name, buf) statx (file_name, buf, STATSIZE, STX_HIDDEN)
-# ifdef lstat
-#  undef lstat
-# endif
-# define lstat(file_name, buf) statx (file_name, buf, STATSIZE, STX_HIDDEN | STX_LINK)
-#endif
-
-#if STAT_MACROS_BROKEN
-# undef S_ISBLK
-# undef S_ISCHR
-# undef S_ISCTG
-# undef S_ISDIR
-# undef S_ISFIFO
-# undef S_ISLNK
-# undef S_ISREG
-# undef S_ISSOCK
-#endif
 
 /* On MSDOS, there are missing things from <sys/stat.h>.  */
 #if MSDOS
@@ -266,67 +164,29 @@ extern int errno;
 
 #if MAJOR_IN_MKDEV
 # include <sys/mkdev.h>
-# if !defined(makedev) && defined(mkdev)
-#  define makedev(a,b) mkdev((a),(b))
-# endif
-# define GOT_MAJOR
-#endif
-
-#if MAJOR_IN_SYSMACROS
+#elif defined MAJOR_IN_SYSMACROS
 # include <sys/sysmacros.h>
-# define GOT_MAJOR
-#endif
-
-/* Some <sys/types.h> defines the macros. */
-#ifdef major
-# define GOT_MAJOR
-#endif
-
-#ifndef GOT_MAJOR
+#elif !defined major /* sys/types.h might define it */
 # if MSDOS
 #  define major(device)		(device)
 #  define minor(device)		(device)
 #  define makedev(major, minor)	(((major) << 8) | (minor))
-#  define GOT_MAJOR
+# else
+#  define major(device)		(((device) >> 8) & 0xff)
+#  define minor(device)		((device) & 0xff)
+#  define makedev(major, minor)	(((major) << 8) | (minor))
 # endif
 #endif
-
-/* For HP-UX before HP-UX 8, major/minor are not in <sys/sysmacros.h>.  */
-#ifndef GOT_MAJOR
-# if defined(hpux) || defined(__hpux__) || defined(__hpux)
-#  include <sys/mknod.h>
-#  define GOT_MAJOR
-# endif
-#endif
-
-#ifndef GOT_MAJOR
-# define major(device)		(((device) >> 8) & 0xff)
-# define minor(device)		((device) & 0xff)
-# define makedev(major, minor)	(((major) << 8) | (minor))
-#endif
-
-#undef GOT_MAJOR
 
 /* Declare wait status.  */
 
-#if HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#endif
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(s)	(((s) >> 8) & 0xff)
-#endif
-#ifndef WIFSIGNALED
-# define WIFSIGNALED(s)	(((s) & 0xffff) - 1 < (unsigned) 0xff)
-#endif
-#ifndef WTERMSIG
-# define WTERMSIG(s)	((s) & 0x7f)
-#endif
+#include <sys/wait.h>
 
 /* FIXME: It is wrong to use BLOCKSIZE for buffers when the logical block
    size is greater than 512 bytes; so ST_BLKSIZE code below, in preparation
    for some cleanup in this area, later.  */
 
-/* Extract or fake data from a `struct stat'.  ST_BLKSIZE gives the
+/* Extract or fake data from a 'struct stat'.  ST_BLKSIZE gives the
    optimal I/O blocksize for the file, in bytes.  Some systems, like
    Sequents, return st_blksize of 0 on pipes.  */
 
@@ -339,27 +199,19 @@ extern int errno;
     ((statbuf).st_blksize > 0 ? (statbuf).st_blksize : DEFAULT_ST_BLKSIZE)
 #endif
 
-/* Extract or fake data from a `struct stat'.  ST_NBLOCKS gives the
+/* Extract or fake data from a 'struct stat'.  ST_NBLOCKS gives the
    number of ST_NBLOCKSIZE-byte blocks in the file (including indirect blocks).
    HP-UX counts st_blocks in 1024-byte units,
-   this loses when mixing HP-UX and BSD filesystems with NFS.  AIX PS/2
-   counts st_blocks in 4K units.  */
+   this loses when mixing HP-UX and BSD filesystems with NFS.  */
 
 #if !HAVE_ST_BLOCKS
-# if defined(_POSIX_SOURCE) || !defined(BSIZE)
-#  define ST_NBLOCKS(statbuf) ((statbuf).st_size / ST_NBLOCKSIZE + ((statbuf).st_size % ST_NBLOCKSIZE != 0))
-# else
-   off_t st_blocks ();
-#  define ST_NBLOCKS(statbuf) (st_blocks ((statbuf).st_size))
-# endif
+# define ST_NBLOCKS(statbuf) \
+    ((statbuf).st_size / ST_NBLOCKSIZE \
+     + ((statbuf).st_size % ST_NBLOCKSIZE != 0))
 #else
 # define ST_NBLOCKS(statbuf) ((statbuf).st_blocks)
-# if defined(hpux) || defined(__hpux__) || defined(__hpux)
+# ifdef __hpux
 #  define ST_NBLOCKSIZE 1024
-# else
-#  if defined(_AIX) && defined(_I386)
-#   define ST_NBLOCKSIZE (4 * 1024)
-#  endif
 # endif
 #endif
 
@@ -380,14 +232,8 @@ extern int errno;
 
 /* Declare standard functions.  */
 
-#if STDC_HEADERS
-# include <stdlib.h>
-#else
-void *malloc ();
-char *getenv ();
-#endif
-
 #include <stddef.h>
+#include <stdlib.h>
 
 #include <stdio.h>
 #if !defined _POSIX_VERSION && MSDOS
@@ -400,33 +246,19 @@ char *getenv ();
 #endif
 
 #include <limits.h>
-
-#ifndef MB_LEN_MAX
-# define MB_LEN_MAX 1
-#endif
-
 #include <inttypes.h>
-
-#include <intprops.h>
 
 /* Prototypes for external functions.  */
 
-#if HAVE_LOCALE_H
-# include <locale.h>
-#endif
-#if !HAVE_SETLOCALE
-# define setlocale(category, locale) /* empty */
-#endif
+#include <locale.h>
 
 #include <time.h>
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif
 
 /* Library modules.  */
 
 #include <dirname.h>
 #include <error.h>
+#include <intprops.h>
 #include <savedir.h>
 #include <unlocked-io.h>
 #include <xalloc.h>
@@ -451,8 +283,4 @@ char *getenv ();
 # define SET_BINARY_MODE(arc)
 # define TTY_NAME "/dev/tty"
 # include <paxlib.h>
-#endif
-
-#if XENIX
-# include <sys/inode.h>
 #endif

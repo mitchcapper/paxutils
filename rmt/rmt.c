@@ -27,13 +27,6 @@
 #include <c-ctype.h>
 #include <safe-read.h>
 
-#ifndef EXIT_FAILURE
-# define EXIT_FAILURE 1
-#endif
-#ifndef EXIT_SUCCESS
-# define EXIT_SUCCESS 0
-#endif
-
 
 int dbglev;
 FILE *dbgout;
