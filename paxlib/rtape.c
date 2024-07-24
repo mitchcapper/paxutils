@@ -491,12 +491,14 @@ rmt_open (const char *file_name, int open_mode, int bias,
 	/* Child.  */
 
 	close (STDIN_FILENO);
-	dup (to_remote[remote_pipe_number][PREAD]);
+	if (dup (to_remote[remote_pipe_number][PREAD]) != STDIN_FILENO)
+	  error (EXIT_ON_EXEC_ERROR, errno, _("Cannot dup stdin"));
 	close (to_remote[remote_pipe_number][PREAD]);
 	close (to_remote[remote_pipe_number][PWRITE]);
 
 	close (STDOUT_FILENO);
-	dup (from_remote[remote_pipe_number][PWRITE]);
+	if (dup (from_remote[remote_pipe_number][PWRITE]) != STDOUT_FILENO)
+	  error (EXIT_ON_EXEC_ERROR, errno, _("Cannot dup stdout"));
 	close (from_remote[remote_pipe_number][PREAD]);
 	close (from_remote[remote_pipe_number][PWRITE]);
 
