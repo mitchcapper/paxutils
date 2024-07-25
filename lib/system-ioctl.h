@@ -1,6 +1,6 @@
 /* System dependent definitions for GNU tar's use of ioctl macros.
 
-   Copyright (C) 1994-2001, 2003-2007, 2023 Free Software Foundation, Inc.
+   Copyright (C) 1994-2001, 2003-2007, 2023-2024 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
