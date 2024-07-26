@@ -32,12 +32,16 @@
    code, courtesy of Dan Kegel.  */
 
 #include <system.h>
-#include <system-ioctl.h>
 #include <safe-read.h>
 #include <full-write.h>
 #include "localedir.h"
 
 #include <signal.h>
+
+#if HAVE_SYS_MTIO_H
+# include <sys/ioctl.h>
+# include <sys/mtio.h>
+#endif
 
 #if HAVE_NETDB_H
 # include <netdb.h>

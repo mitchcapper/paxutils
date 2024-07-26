@@ -13,12 +13,12 @@ and autoconf installed to bootstrap the package. See the chapter
 `Building' for the detailed instructions. After bootstrapping, there
 should be a file 'INSTALL' with generic installation
 instructions. Package-specific installation instructions are set forth
-in the file README. 
+in the file README.
 
     Please, note that the accompanying documentation may be inaccurate
 or incomplete (well, to say the truth it is absent. See TODO for more
 info). The ChangeLog file is currently the authoritative documentation
-of all recent changes. 
+of all recent changes.
 
 Report bugs to <bug-tar@gnu.org>
 
@@ -49,20 +49,20 @@ of autotools. At the time of this writing these are:
   Package   Version (>=)
   ========  ============
   automake  1.8.5
-  autoconf  2.59
-  gettext   0.14.1
+  autoconf  2.70
+  gettext   0.22.5
 
-    To prepare the package for building run build-aux/bootstrap. For
+    To prepare the package for building run ./bootstrap. For
 example:
 
  $ cd paxutils
- $ build-aux/bootstrap
+ $ ./bootstrap
 
-    If you have already checked out gnulib sources, use --gnulib-srcdir
+    If you have already checked out gnulib sources, use --gnulib-refdir
 to specify their location, this will spare you time and bandwidth:
 
  $ cd paxutils
- $ build-aux/bootstrap --gnulib-srcdir=$HOME/gnu/gnulib
+ $ ./bootstrap --gnulib-refdir=$HOME/gnu/gnulib
 
 * Copyright information:
 

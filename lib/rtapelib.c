@@ -32,13 +32,17 @@
    code, courtesy of Dan Kegel.  */
 
 #include "system.h"
-#include "system-ioctl.h"
 
 #include <safe-read.h>
 #include <full-write.h>
 #include <verify.h>
 
 #include <signal.h>
+
+#if HAVE_SYS_MTIO_H
+# include <sys/ioctl.h>
+# include <sys/mtio.h>
+#endif
 
 #if HAVE_NETDB_H
 # include <netdb.h>
@@ -437,10 +441,16 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 
   assume (remote_file);
 
+#if HAVE_GETADDRINFO
   /* FIXME: Should somewhat validate the decoding, here.  */
-  if (gethostbyname (remote_host) == NULL)
-    error (EXIT_ON_EXEC_ERROR, 0, _("Cannot connect to %s: resolve failed"),
-	   remote_host);
+  struct addrinfo *ai;
+  int err = getaddrinfo (remote_host, NULL, NULL, &ai);
+  if (err)
+    error (EXIT_ON_EXEC_ERROR, err == EAI_SYSTEM ? errno : 0,
+	   _("Cannot connect to %s: %s"),
+	   remote_host, gai_strerror (err));
+  freeaddrinfo (ai);
+#endif
 
   if (remote_user && *remote_user == '\0')
     remote_user = 0;

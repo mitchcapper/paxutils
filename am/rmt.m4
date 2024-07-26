@@ -20,23 +20,12 @@ AC_DEFUN([PU_RMT],[
 
   enable_rmt() {
     if test $ac_cv_header_sys_mtio_h = yes; then
-      AC_CACHE_CHECK(for remote tape header files, pu_cv_header_rmt,
-        [AC_PREPROC_IFELSE(
-	   [AC_LANG_SOURCE(
-	      [[
-		#if HAVE_SGTTY_H
-		# include <sgtty.h>
-		#endif
-		#include <sys/socket.h>
-	      ]])],
-      pu_cv_header_rmt=yes,
-      pu_cv_header_rmt=no)])
-      test $pu_cv_header_rmt = yes && PU_RMT_PROG='rmt$(EXEEXT)'
+      PU_RMT_PROG='rmt$(EXEEXT)'
       AC_SUBST(PU_RMT_PROG)
     fi
   }
 
-  AC_CHECK_HEADERS([sys/mtio.h])
+  AC_CHECK_HEADERS_ONCE([sys/mtio.h])
   AC_CACHE_CHECK(which ioctl field to test for reversed bytes,
     pu_cv_header_mtio_check_field,
     [AC_EGREP_HEADER(mt_model, sys/mtio.h,

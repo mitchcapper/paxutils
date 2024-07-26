@@ -29,22 +29,8 @@ gl_EARLY
 AC_PROG_RANLIB
 AC_SYS_LARGEFILE
 
-AC_CHECK_HEADERS([
-  sgtty.h \
-  sys/param.h sys/device.h sys/gentape.h \
-  sys/io/trioctl.h \
-  sys/mtio.h sys/tprintf.h sys/tape.h \
-])
-
-AC_CHECK_HEADERS([sys/buf.h], [], [],
-[#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif])
-
 AC_HEADER_MAJOR
-AC_CHECK_MEMBERS([struct stat.st_blksize])
 
-AC_STRUCT_ST_BLOCKS
 AC_MSG_CHECKING([for st_fstype string in struct stat])
 AC_CACHE_VAL(diff_cv_st_fstype_string,
   [AC_COMPILE_IFELSE(
@@ -79,23 +65,6 @@ PU_RMT
 PU_RTAPELIB
 PU_SYSTEM
 
-AC_CHECK_FUNCS([mkfifo])
-AC_CHECK_DECLS([getgrgid],,, [#include <grp.h>])
-AC_CHECK_DECLS([getpwuid],,, [#include <pwd.h>])
-
-# Set LIB_SETSOCKOPT to -lnsl -lsocket if necessary.
-tar_save_LIBS=$LIBS
-  LIB_SETSOCKOPT=
-  AC_SEARCH_LIBS(setsockopt, [socket], ,
-    [AC_SEARCH_LIBS(setsockopt, [socket], , , [-lnsl])])
-  AC_SEARCH_LIBS(setsockopt, [nsl])
-
-  case "$ac_cv_search_setsockopt" in
-    -l*) LIB_SETSOCKOPT=$ac_cv_search_setsockopt
-  esac
-  AC_SUBST(LIB_SETSOCKOPT)
-LIBS=$tar_save_LIBS
-
 AC_CACHE_CHECK(for remote shell, tar_cv_path_RSH,
   [if test -n "$RSH"; then
     tar_cv_path_RSH=$RSH
@@ -117,9 +86,7 @@ AC_CACHE_CHECK(for remote shell, tar_cv_path_RSH,
       fi
     done
   fi])
-if test $tar_cv_path_RSH = no; then
-  AC_CHECK_HEADERS(netdb.h)
-else
+if test $tar_cv_path_RSH != no; then
   AC_DEFINE_UNQUOTED(REMOTE_SHELL, "$tar_cv_path_RSH",
     [Define to the full path of your rsh, if any.])
 fi
@@ -187,7 +154,7 @@ AC_MSG_RESULT($DEFAULT_BLOCKING)
 
 # Gettext.
 AM_GNU_GETTEXT([external], [need-ngettext])
-AM_GNU_GETTEXT_VERSION([0.21])
+AM_GNU_GETTEXT_VERSION([0.22.5])
 
 AC_SUBST(BACKUP_LIBEXEC_SCRIPTS)
 AC_SUBST(BACKUP_SBIN_SCRIPTS)

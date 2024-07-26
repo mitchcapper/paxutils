@@ -10,6 +10,7 @@ full-write
 gettext-h
 getopt-gnu
 gitlog-to-changelog
+inttypes
 limits-h
 lstat
 obstack

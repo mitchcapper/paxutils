@@ -45,10 +45,6 @@ extern bool force_local_option;
 
 #define __REM_BIAS (1 << 30)
 
-#ifndef O_CREAT
-# define O_CREAT 01000
-#endif
-
 #define rmtopen(dev_name, oflag, mode, command) \
   (_remdev (dev_name) ? rmt_open__ (dev_name, oflag, __REM_BIAS, command) \
    : open (dev_name, oflag, mode))

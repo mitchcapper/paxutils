@@ -15,7 +15,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "system.h"
-#include "system-ioctl.h"
+
+#if HAVE_SYS_MTIO_H
+# include <sys/ioctl.h>
+# include <sys/mtio.h>
+#endif
+
 #include <configmake.h>
 #include <argp.h>
 #include <argp-version-etc.h>
