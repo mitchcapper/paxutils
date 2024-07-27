@@ -96,13 +96,13 @@ char *checkpoint_granularity;
 struct timespec touch_time;
 
 /* Verbose mode */
-int verbose;
+bool verbose;
 
 /* Quiet mode */
-int quiet;
+bool quiet;
 
 /* Don't dereference symlinks (for --stat) */
-int no_dereference_option;
+bool no_dereference_option;
 
 const char *argp_program_version = "genfile (" PACKAGE ") " VERSION;
 const char *argp_program_bug_address = "<" PACKAGE_BUGREPORT ">";
@@ -121,7 +121,7 @@ static char doc[] = N_("genfile manipulates data files for GNU paxutils test sui
 
 static struct argp_option options[] = {
 #define GRP 0
-  {NULL, 0, NULL, 0,
+  {nullptr, 0, nullptr, 0,
    N_("File creation options:"), GRP},
   {"length", 'l', N_("SIZE"), 0,
    N_("Create file of the given SIZE"), GRP+1 },
@@ -129,42 +129,42 @@ static struct argp_option options[] = {
    N_("Write to file NAME, instead of standard output"), GRP+1},
   {"files-from", 'T', N_("FILE"), 0,
    N_("Read file names from FILE"), GRP+1},
-  {"null", '0', NULL, 0,
+  {"null", '0', nullptr, 0,
    N_("-T reads null-terminated names"), GRP+1},
   {"pattern", 'p', N_("PATTERN"), 0,
    N_("Fill the file with the given PATTERN. PATTERN is 'default' or 'zeros'"),
    GRP+1 },
   {"block-size", 'b', N_("SIZE"), 0,
    N_("Size of a block for sparse file"), GRP+1},
-  {"sparse", 's', NULL, 0,
+  {"sparse", 's', nullptr, 0,
    N_("Generate sparse file. Rest of the command line gives the file map."),
    GRP+1 },
   {"seek", OPT_SEEK, N_("OFFSET"), 0,
    N_("Seek to the given offset before writing data"),
    GRP+1 },
-  {"quiet", 'q', NULL, 0,
+  {"quiet", 'q', nullptr, 0,
    N_("Suppress non-fatal diagnostic messages") },
 #undef GRP
 #define GRP 10
-  {NULL, 0, NULL, 0,
+  {nullptr, 0, nullptr, 0,
    N_("File statistics options:"), GRP},
 
   {"stat", 'S', N_("FORMAT"), OPTION_ARG_OPTIONAL,
    N_("Print contents of struct stat for each given file. Default FORMAT is: ")
    DEFAULT_STAT_FORMAT,
    GRP+1 },
-  {"no-dereference", 'h', NULL, 0,
+  {"no-dereference", 'h', nullptr, 0,
    N_("stat symbolic links instead of referenced files"),
    GRP+1 },
 
-  {"set-times", 't', NULL, 0,
+  {"set-times", 't', nullptr, 0,
    N_("Set access and modification times of the files to the time supplied"
       " by --date option"),
    GRP+1 },
 
 #undef GRP
 #define GRP 20
-  {NULL, 0, NULL, 0,
+  {nullptr, 0, nullptr, 0,
    N_("Synchronous execution options:"), GRP},
 
   {"run", 'r', N_("N"), OPTION_ARG_OPTIONAL,
@@ -176,18 +176,18 @@ static struct argp_option options[] = {
   {"date", OPT_DATE, N_("STRING"), 0,
    N_("Set date for next --touch option"),
    GRP+1 },
-  {"verbose", OPT_VERBOSE, NULL, 0,
+  {"verbose", OPT_VERBOSE, nullptr, 0,
    N_("Display executed checkpoints and exit status of COMMAND"),
    GRP+1 },
 #undef GRP
 #define GRP 30
-  {NULL, 0, NULL, 0,
+  {nullptr, 0, nullptr, 0,
    N_("Synchronous execution actions. These are executed when checkpoint number given by --checkpoint option is reached."), GRP},
 
   {"cut", OPT_TRUNCATE, N_("FILE"), 0,
    N_("Truncate FILE to the size specified by previous --length option (or 0, if it is not given)"),
    GRP+1 },
-  {"truncate", 0, NULL, OPTION_ALIAS, NULL, GRP+1 },
+  {"truncate", 0, nullptr, OPTION_ALIAS, nullptr, GRP+1 },
   {"append", OPT_APPEND, N_("FILE"), 0,
    N_("Append SIZE bytes to FILE. SIZE is given by previous --length option."),
    GRP+1 },
@@ -200,21 +200,21 @@ static struct argp_option options[] = {
   {"delete", OPT_DELETE, N_("FILE"), 0,
    N_("Delete FILE"),
    GRP+1 },
-  {"unlink", 0, 0, OPTION_ALIAS, NULL, GRP+1},
+  {"unlink", 0, 0, OPTION_ALIAS, nullptr, GRP+1},
 #undef GRP
-  { NULL, }
+  { nullptr, }
 };
 
-static char const * const pattern_args[] = { "default", "zeros", 0 };
+static char const * const pattern_args[] = { "default", "zeros", nullptr };
 static enum pattern const pattern_types[] = {DEFAULT_PATTERN, ZEROS_PATTERN};
 
-static int
+static bool
 xlat_suffix (off_t *vp, const char *p)
 {
   off_t val = *vp;
 
   if (p[1])
-    return 1;
+    return true;
   switch (p[0])
     {
     case 'g':
@@ -231,13 +231,13 @@ xlat_suffix (off_t *vp, const char *p)
       break;
 
     default:
-      return 1;
+      return true;
     }
   return *vp <= val;
 }
 
 static off_t
-get_size (const char *str, int allow_zero)
+get_size (const char *str)
 {
   const char *p;
   off_t v = 0;
@@ -307,7 +307,7 @@ reg_action (int action, char *arg)
   act->ts = touch_time;
   act->size = file_length;
   act->name = arg;
-  act->next = NULL;
+  act->next = nullptr;
   if (action_tail)
     action_tail->next = act;
   else
@@ -329,7 +329,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case 'l':
-      file_length = get_size (arg, 1);
+      file_length = get_size (arg);
       break;
 
     case 'p':
@@ -337,11 +337,11 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case 'b':
-      block_size = get_size (arg, 0);
+      block_size = get_size (arg);
       break;
 
     case 'q':
-      quiet = 1;
+      quiet = true;
       break;
 
     case 's':
@@ -359,7 +359,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case 'h':
-      no_dereference_option = 1;
+      no_dereference_option = true;
       break;
 
     case 'r':
@@ -372,7 +372,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case OPT_SEEK:
-      seek_offset = get_size (arg, 0);
+      seek_offset = get_size (arg);
       break;
 
     case OPT_CHECKPOINT:
@@ -386,7 +386,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case OPT_DATE:
-      if (! parse_datetime (&touch_time, arg, NULL))
+      if (! parse_datetime (&touch_time, arg, nullptr))
 	argp_error (state, _("Unknown date format"));
       break;
 
@@ -399,7 +399,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case OPT_VERBOSE:
-      verbose++;
+      verbose = true;
       break;
 
     default:
@@ -413,9 +413,9 @@ static struct argp argp = {
   parse_opt,
   N_("[ARGS...]"),
   doc,
-  NULL,
-  NULL,
-  NULL
+  nullptr,
+  nullptr,
+  nullptr
 };
 
 
@@ -462,7 +462,7 @@ generate_simple_file (char *filename)
 }
 
 /* A simplified version of the same function from tar */
-int
+static bool
 read_name_from_file (FILE *fp, struct obstack *stk)
 {
   int c;
@@ -499,7 +499,7 @@ generate_files_from_list ()
       obstack_free (&stk, name);
     }
   fclose (fp);
-  obstack_free (&stk, NULL);
+  obstack_free (&stk, nullptr);
 }
 
 
@@ -529,22 +529,22 @@ mksparse (int fd, off_t displ, char *marks)
     }
 }
 
-static int
+static bool
 make_fragment (int fd, char *offstr, char *mapstr)
 {
   int i;
-  off_t displ = get_size (offstr, 1);
+  off_t displ = get_size (offstr);
 
   file_length += displ;
 
   if (!mapstr || !*mapstr)
     {
       mkhole (fd, displ);
-      return 1;
+      return true;
     }
   else if (*mapstr == '=')
     {
-      off_t n = get_size (mapstr + 1, 1);
+      off_t n = get_size (mapstr + 1);
 
       switch (pattern)
 	{
@@ -573,7 +573,7 @@ make_fragment (int fd, char *offstr, char *mapstr)
       file_length += block_size * strlen (mapstr);
       mksparse (fd, displ, mapstr);
     }
-  return 0;
+  return false;
 }
 
 static void
@@ -597,7 +597,7 @@ generate_sparse_file (int argc, char **argv)
 
   while (argc)
     {
-      if (argv[0][0] == '-' && argv[0][1] == 0)
+      if (argv[0][0] == '-' && !argv[0][1])
 	{
 	  char buf[256];
 	  while (fgets (buf, sizeof (buf), stdin))
@@ -731,7 +731,7 @@ print_stat (const char *name)
 	  printf ("\n");
 	  error (EXIT_USAGE, 0, _("Unknown field `%s'"), p);
 	}
-      p = strtok (NULL, ",");
+      p = strtok (nullptr, ",");
       if (p)
 	printf (" ");
     }
@@ -832,7 +832,7 @@ exec_checkpoint (struct action *p)
 void
 process_checkpoint (uintmax_t n)
 {
-  struct action *p, *prev = NULL;
+  struct action *p, *prev = nullptr;
 
   for (p = action_head; p; )
     {
@@ -846,7 +846,7 @@ process_checkpoint (uintmax_t n)
 	    prev->next = next;
 	  else
 	    action_head = next;
-	  if (next == NULL)
+	  if (!next)
 	    action_tail = prev;
 	  free (p);
 	}
@@ -922,7 +922,7 @@ exec_command (int argc, char **argv)
   /* Master */
   close (fd[1]);
   fp = fdopen (fd[0], "rb");
-  if (fp == NULL)
+  if (!fp)
     error (EXIT_FAILURE, errno, "fdopen");
 
   while ((p = fgets (buf, sizeof buf, fp)))
@@ -992,11 +992,11 @@ main (int argc, char **argv)
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
 
-  parse_datetime (&touch_time, "now", NULL);
+  parse_datetime (&touch_time, "now", nullptr);
 
   /* Decode command options.  */
 
-  if (argp_parse (&argp, argc, argv, 0, &index, NULL))
+  if (argp_parse (&argp, argc, argv, 0, &index, nullptr))
     exit (EXIT_USAGE);
 
   argc -= index;

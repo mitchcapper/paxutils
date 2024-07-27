@@ -13,6 +13,7 @@ gitlog-to-changelog
 inttypes
 limits-h
 lstat
+nullptr
 obstack
 parse-datetime
 quote

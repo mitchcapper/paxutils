@@ -119,7 +119,7 @@ get_status_string (int handle, char *command_buffer)
       if (safe_read (READ_SIDE (handle), cursor, 1) != 1)
 	{
 	  _rmt_shutdown (handle, EIO);
-	  return 0;
+	  return nullptr;
 	}
       if (*cursor == '\n')
 	{
@@ -131,7 +131,7 @@ get_status_string (int handle, char *command_buffer)
   if (i == COMMAND_BUFFER_SIZE)
     {
       _rmt_shutdown (handle, EIO);
-      return 0;
+      return nullptr;
     }
 
   /* Check the return status.  */
@@ -160,7 +160,7 @@ get_status_string (int handle, char *command_buffer)
       if (*cursor == 'F')
 	_rmt_shutdown (handle, errno);
 
-      return 0;
+      return nullptr;
     }
 
   /* Check for mis-synced pipes.  */
@@ -168,7 +168,7 @@ get_status_string (int handle, char *command_buffer)
   if (*cursor != 'A')
     {
       _rmt_shutdown (handle, EIO);
-      return 0;
+      return nullptr;
     }
 
   /* Got an `A' (success) response.  */
@@ -268,7 +268,8 @@ _rmt_rexec (char *host, char *user, char *rmt_command)
   if (rexecserv = getservbyname ("exec", "tcp"), !rexecserv)
     error (EXIT_ON_EXEC_ERROR, 0, _("exec/tcp: Service not available"));
 
-  result = rexec (&host, rexecserv->s_port, user, 0, rmt_command, 0);
+  result = rexec (&host, rexecserv->s_port,
+		  user, nullptr, rmt_command, nullptr);
   if (fclose (stdin) == EOF)
     error (0, errno, _("stdin"));
   fdopen (saved_stdin, "r");
@@ -343,7 +344,7 @@ encode_oflag (char *buf, int oflag)
 }
 
 /* Reset user and group IDs to be those of the real user.
-   Return NULL on success, a failing syscall name (setting errno) on error.  */
+   Return null on success, a failing syscall name (setting errno) on error.  */
 static char const *
 sys_reset_uid_gid (void)
 {
@@ -362,7 +363,7 @@ sys_reset_uid_gid (void)
     return "setuid";
 #endif
 
-  return NULL;
+  return nullptr;
 }
 
 /* Open a remote file on the system specified in FILE_NAME, as the given user.
@@ -402,8 +403,8 @@ rmt_open (const char *file_name, int open_mode, int bias,
 
     file_name_copy = xstrdup (file_name);
     remote_host = file_name_copy;
-    remote_user = 0;
-    remote_file = 0;
+    remote_user = nullptr;
+    remote_file = nullptr;
 
     for (cursor = file_name_copy; *cursor; cursor++)
       switch (*cursor)
@@ -440,7 +441,7 @@ rmt_open (const char *file_name, int open_mode, int bias,
   /* FIXME: Should somewhat validate the decoding, here.  */
 
   if (remote_user && *remote_user == '\0')
-    remote_user = 0;
+    remote_user = nullptr;
 
 #if WITH_REXEC
 
@@ -516,10 +517,10 @@ rmt_open (const char *file_name, int open_mode, int bias,
 
 	if (remote_user)
 	  execl (remote_shell, remote_shell_basename, remote_host,
-		 "-l", remote_user, rmt_command, (char *) 0);
+		 "-l", remote_user, rmt_command, nullptr);
 	else
 	  execl (remote_shell, remote_shell_basename, remote_host,
-		 rmt_command, (char *) 0);
+		 rmt_command, nullptr);
 
 	/* Bad problems if we get here.  */
 

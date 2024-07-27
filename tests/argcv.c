@@ -31,8 +31,8 @@
  * returns 0 on success, nonzero on failure
  */
 
-#define isws(c) ((c)==' '||(c)=='\t'||(c)=='\n')
-#define isdelim(c,delim) ((c)=='"'||strchr(delim,(c))!=NULL)
+#define isws(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
+#define isdelim(c, delim) ((c) == '"' || ((c) && strchr (delim, c)))
 
 static int
 argcv_scan (int len, const char *command, const char *delim, const char* cmnt,
@@ -81,7 +81,7 @@ argcv_scan (int len, const char *command, const char *delim, const char* cmnt,
          to the newline and restart the token search. */
       if (*save <= len)
 	{
-	  if (cmnt && strchr (cmnt, command[*start]) != NULL)
+	  if (cmnt && strchr (cmnt, command[*start]))
 	    {
 	      i = *save;
 	      while (i < len && command[i] != '\n')
@@ -140,7 +140,7 @@ xtonum (const char *src, int base, size_t cnt)
 }
 
 static size_t
-escaped_length (const char *str, int *quote)
+escaped_length (const char *str, bool *quote)
 {
   size_t len = 0;
 
@@ -149,12 +149,12 @@ escaped_length (const char *str, int *quote)
       if (*str == ' ')
 	{
 	  len++;
-	  *quote = 1;
+	  *quote = true;
 	}
       else if (*str == '"')
 	{
 	  len += 2;
-	  *quote = 1;
+	  *quote = true;
 	}
       else if (c_isprint (*str))
 	len++;
@@ -279,7 +279,7 @@ argcv_get (const char *command, const char *delim, const char* cmnt,
   int i = 0;
   int start, end, save;
 
-  *argv = NULL;
+  *argv = nullptr;
 
   /* Count number of arguments */
   *argc = 0;
@@ -305,12 +305,12 @@ argcv_get (const char *command, const char *delim, const char* cmnt,
 	}
       n = end - start + 1;
       (*argv)[i] = calloc (n+1,  sizeof (char));
-      if ((*argv)[i] == NULL)
+      if (!(*argv)[i])
 	return 1;
       unescape_copy ((*argv)[i], &command[start], n);
       (*argv)[i][n] = 0;
     }
-  (*argv)[i] = NULL;
+  (*argv)[i] = nullptr;
   return 0;
 }
 
@@ -338,17 +338,17 @@ argcv_string (int argc, char **argv, char **pstring)
   char *buffer;
 
   /* No need.  */
-  if (pstring == NULL)
+  if (!pstring)
     return 1;
 
   buffer = malloc (1);
-  if (buffer == NULL)
+  if (!buffer)
     return 1;
   *buffer = '\0';
 
   for (len = i = j = 0; i < argc; i++)
     {
-      int quote = 0;
+      bool quote = false;
       int toklen;
 
       toklen = escaped_length (argv[i], &quote);
@@ -358,7 +358,7 @@ argcv_string (int argc, char **argv, char **pstring)
 	len += 2;
 
       buffer = realloc (buffer, len);
-      if (buffer == NULL)
+      if (!buffer)
         return 1;
 
       if (i != 0)
@@ -379,10 +379,11 @@ argcv_string (int argc, char **argv, char **pstring)
   return 0;
 }
 
-#if 0
+#if false
 char *command = "set prompt=\"& \a\\\"\" \\x25\\0145\\098\\ta";
 
-main(int xargc, char **xargv)
+int
+main (int xargc, char **xargv)
 {
   int i, argc;
   char **argv;

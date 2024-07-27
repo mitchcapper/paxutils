@@ -36,15 +36,15 @@ struct pax_buffer
   char  *record;              /* Record buffer, record_size bytes long */
 
   int status;                 /* Return code from the latest I/O */
-  
+
     /* I/O functions */
   paxbuf_io_fp writer;        /* Writes data */
   paxbuf_io_fp reader;        /* Reads data */
   paxbuf_seek_fp seek;        /* Seeks the underlying transport layer */
     /* Terminal functions */
-  paxbuf_term_fp open;        /* Open a new volume */ 
+  paxbuf_term_fp open;        /* Open a new volume */
   paxbuf_term_fp close;       /* Close the existing volume */
-  paxbuf_destroy_fp destroy;  /* Destroy the closure data */ 
+  paxbuf_destroy_fp destroy;  /* Destroy the closure data */
     /* Other callbacks */
   paxbuf_wrapper_fp wrapper;  /* Called when writer or reader returns EOF */
 
@@ -61,7 +61,7 @@ noinit (const char *name)
   fprintf (stderr,
 	   _("INTERNAL ERROR: %s is not initialized. Please, report.\n"),
 	   name);
-  exit (1);
+  exit (EXIT_FAILURE);
 }
 
 static pax_io_status_t
@@ -138,16 +138,16 @@ paxbuf_create (paxbuf_t *pbuf, int mode, void *closure, size_t record_size)
       free (buf);
       return ENOMEM;
     }
-  
+
   buf->record_size = record_size;
   buf->record_level = 0;
   buf->closure = closure;
   buf->mode = mode;
-  
+
   paxbuf_set_io (buf, default_reader, default_writer, default_seek);
   paxbuf_set_term (buf, default_open, default_close, default_destroy);
   paxbuf_set_wrapper (buf, default_wrapper);
-  
+
   *pbuf = buf;
   return 0;
 }
@@ -160,7 +160,7 @@ paxbuf_destroy (paxbuf_t *pbuf)
   if (buf->destroy)
     buf->destroy (buf->closure);
   free (buf);
-  *pbuf = NULL;
+  *pbuf = nullptr;
 }
 
 void
@@ -200,7 +200,7 @@ fill_buffer (paxbuf_t buf)
   do
     {
       size_t s = 0;
-      
+
       status = buf->reader (buf->closure, buf->record + buf->record_level,
 			    buf->record_size - buf->record_level, &s);
       buf->record_level += s;
@@ -329,4 +329,3 @@ paxbuf_get_mode (paxbuf_t buf)
 {
   return buf->mode;
 }
-

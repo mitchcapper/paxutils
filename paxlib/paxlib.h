@@ -41,7 +41,7 @@ extern void (*error_hook) (void);
    is zero when the error is not being detected by the system.  */
 
 #define WARN(Args) \
-  do { if (error_hook) error_hook (); error Args; } while (0)
+  do { if (error_hook) error_hook (); error Args; } while (false)
 #define ERROR(Args) \
   do						\
     {						\
@@ -49,7 +49,7 @@ extern void (*error_hook) (void);
       error Args;				\
       exit_status = PAXEXIT_FAILURE;		\
     }						\
-  while (0)
+  while (false)
 #define FATAL_ERROR(Args) \
   do						\
     {						\
@@ -57,7 +57,7 @@ extern void (*error_hook) (void);
       error Args;				\
       fatal_exit ();				\
     }						\
-  while (0)
+  while (false)
 #define USAGE_ERROR(Args) \
   do						\
     {						\
@@ -65,7 +65,7 @@ extern void (*error_hook) (void);
       error Args;				\
       usage (PAXEXIT_FAILURE);			\
     }						\
-  while (0)
+  while (false)
 
 extern int exit_status;
 

@@ -37,16 +37,17 @@ int dbglev;
 FILE *dbgout;
 
 #define DEBUG(lev,msg)						\
-  do { if (dbgout && (lev) <= dbglev) fprintf (dbgout, "%s", msg); } while (0)
+  do { if (dbgout && (lev) <= dbglev) fprintf (dbgout, "%s", msg); } \
+  while (false)
 #define DEBUG1(lev, fmt, x)						\
-  do { if (dbgout && (lev) <= dbglev) fprintf (dbgout, fmt, x); } while (0)
+  do { if (dbgout && (lev) <= dbglev) fprintf (dbgout, fmt, x); } while (false)
 #define DEBUG2(lev, fmt, x1, x2)					\
   do									\
     {									\
       if (dbgout && (lev) <= dbglev)					\
 	fprintf (dbgout, fmt, x1, x2);					\
     }									\
-  while (0)
+  while (false)
 
 #define VDEBUG(lev, pfx, fmt)		        \
   do						\
@@ -60,7 +61,7 @@ FILE *dbgout;
           va_end (aptr);                        \
 	}					\
     }						\
-  while (0)
+  while (false)
 
 
 
@@ -77,8 +78,8 @@ trimnl (char *str)
 
 
 
-char *input_buf_ptr = NULL;
-size_t input_buf_size = 0;
+char *input_buf_ptr;
+size_t input_buf_size;
 
 static char *
 rmt_read (void)
@@ -91,7 +92,7 @@ rmt_read (void)
       return input_buf_ptr;
     }
   DEBUG (10, "reached EOF");
-  return NULL;
+  return nullptr;
 }
 
 static void
@@ -221,7 +222,7 @@ static struct rmt_kw const open_flag_kw[] =
 #endif
     RMT_KW(TRUNC, O_TRUNC),
     RMT_KW(WRONLY, O_WRONLY),
-    { NULL }
+    { nullptr }
   };
 
 static int
@@ -401,7 +402,7 @@ static struct rmt_kw const seek_whence_kw[] =
     RMT_KW(SET, SEEK_SET),
     RMT_KW(CUR, SEEK_CUR),
     RMT_KW(END, SEEK_END),
-    { NULL }
+    { nullptr }
   };
 
 static void
@@ -697,7 +698,7 @@ static struct argp_option options[] = {
     N_("set debug level"), 0 },
   { "debug-file", DEBUG_FILE_OPTION, N_("FILE"), 0,
     N_("set debug output file name"), 0 },
-  { NULL }
+  { nullptr }
 };
 
 static error_t
@@ -706,7 +707,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
   switch (key)
     {
     case 'd':
-      dbglev = strtol (arg, NULL, 0);
+      dbglev = strtol (arg, nullptr, 0);
       break;
 
     case DEBUG_FILE_OPTION:
@@ -734,16 +735,16 @@ parse_opt (int key, char *arg, struct argp_state *state)
 static struct argp argp = {
   options,
   parse_opt,
-  NULL,
+  nullptr,
   doc,
-  NULL,
-  NULL,
-  NULL
+  nullptr,
+  nullptr,
+  nullptr
 };
 
 static const char *rmt_authors[] = {
   "Sergey Poznyakoff",
-  NULL
+  nullptr
 };
 
 
@@ -760,7 +761,7 @@ main (int argc, char **argv)
 {
   char *buf;
   int idx;
-  int stop = 0;
+  bool stop = false;
 
   set_program_name (argv[0]);
   argp_version_setup ("rmt", rmt_authors);
@@ -772,7 +773,7 @@ main (int argc, char **argv)
       textdomain (PACKAGE);
     }
 
-  if (argp_parse (&argp, argc, argv, ARGP_IN_ORDER, &idx, NULL))
+  if (argp_parse (&argp, argc, argv, ARGP_IN_ORDER, &idx, nullptr))
     exit (EXIT_FAILURE);
   if (idx != argc)
     {
@@ -784,13 +785,13 @@ main (int argc, char **argv)
       dbglev = 1;
     }
 
-  while (!stop && (buf = rmt_read ()) != NULL)
+  while (!stop && (buf = rmt_read ()))
     {
       switch (buf[0])
 	{
 	case 'C':
 	  close_device ();
-	  stop = 1;
+	  stop = true;
 	  break;
 
 	case 'I':

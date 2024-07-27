@@ -38,7 +38,7 @@ hash_string_compare (void const *name1, void const *name2)
 
 /* Return zero if TABLE contains a LEN-character long prefix of STRING,
    otherwise, insert a newly allocated copy of this prefix to TABLE and
-   return 1.  If RETURN_PREFIX is not NULL, point it to the allocated
+   return true.  If RETURN_PREFIX is nonnull, point it to the allocated
    copy. */
 static bool
 hash_string_insert_prefix (Hash_table **table, char const *string, size_t len,
@@ -58,8 +58,8 @@ hash_string_insert_prefix (Hash_table **table, char const *string, size_t len,
     s = xstrdup (string);
 
   if (! ((t
-	  || (*table = t = hash_initialize (0, 0, hash_string_hasher,
-					    hash_string_compare, 0)))
+	  || (*table = t = hash_initialize (0, nullptr, hash_string_hasher,
+					    hash_string_compare, nullptr)))
 	 && (e = hash_insert (t, s))))
     xalloc_die ();
 
@@ -67,12 +67,12 @@ hash_string_insert_prefix (Hash_table **table, char const *string, size_t len,
     {
       if (return_prefix)
 	*return_prefix = s;
-      return 1;
+      return true;
     }
   else
     {
       free (s);
-      return 0;
+      return false;
     }
 }
 
@@ -94,7 +94,7 @@ removed_prefixes_p (void)
    suffix.  Check for fully specified file names and other atrocities.
    Warn the user if we do not return NAME.  If LINK_TARGET is 1,
    FILE_NAME is the target of a hard link, not a member name.
-   If ABSOLUTE_NAMES is 0, strip filesystem prefix from the file name. */
+   If !ABSOLUTE_NAMES, strip filesystem prefix from the file name. */
 
 char *
 safer_name_suffix (char const *file_name, bool link_target,

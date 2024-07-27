@@ -25,7 +25,7 @@
 #include <pax.h>
 #include <tar.h>
 
-typedef struct tar_archive 
+typedef struct tar_archive
 {
   char *filename;           /* Name of the archive file */
   int fd;                   /* Archive file descriptor */
@@ -43,7 +43,7 @@ local_reader (void *closure, void *data, size_t size, size_t *ret_size)
 {
   tar_archive_t *tar = closure;
   ssize_t s;
-  
+
   s = read (tar->fd, data, size);
   if (s == -1)
     return pax_io_failure;
@@ -58,7 +58,7 @@ local_writer (void *closure, void *data, size_t size, size_t *ret_size)
 {
   tar_archive_t *tar = closure;
   ssize_t s;
-  
+
   s = write (tar->fd, data, size);
   if (s == -1)
     return pax_io_failure;
@@ -71,7 +71,7 @@ local_seek (void *closure, off_t offset)
 {
   tar_archive_t *tar = closure;
   off_t off;
-  
+
   off = lseek (tar->fd, offset, SEEK_SET);
   if (off == -1)
     return pax_io_failure;
@@ -106,7 +106,7 @@ remote_reader (void *closure, void *data, size_t size, size_t *ret_size)
 {
   tar_archive_t *tar = closure;
   size_t s;
-  
+
   s = rmt_read (tar->fd, data, size);
   if (s == SAFE_READ_ERROR)
     return pax_io_failure;
@@ -121,7 +121,7 @@ remote_writer (void *closure, void *data, size_t size, size_t *ret_size)
 {
   tar_archive_t *tar = closure;
   size_t s;
-  
+
   s = rmt_write (tar->fd, data, size);
   if (s == SAFE_WRITE_ERROR)
     return pax_io_failure;
@@ -150,7 +150,7 @@ remote_open (void *closure, int pax_mode)
     return pax_io_failure;
   return pax_io_success;
 }
-     
+
 static int
 remote_close (void *closure, int mode)
 {
@@ -186,8 +186,8 @@ tar_archive_create (paxbuf_t *pbuf, const char *filename,
   tar->filename = xstrdup (filename);
   tar->fd = -1;
   tar->bfactor = bfactor;
-  tar->rsh = NULL;
-  tar->rmt = NULL;
+  tar->rsh = nullptr;
+  tar->rmt = nullptr;
   paxbuf_create (pbuf, mode, tar, bfactor * BLOCKSIZE);
   if (remote)
     {
@@ -199,7 +199,7 @@ tar_archive_create (paxbuf_t *pbuf, const char *filename,
       paxbuf_set_io (*pbuf, local_reader, local_writer, local_seek);
       paxbuf_set_term (*pbuf, local_open, local_close, tar_destroy);
     }
-    
+
   paxbuf_set_wrapper (*pbuf, tar_wrapper);
 }
 
