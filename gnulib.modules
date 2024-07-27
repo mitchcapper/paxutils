@@ -24,6 +24,7 @@ stdlib
 strerror
 strtol
 strtoumax
+sys_stat
 utimensat
 version-etc-fsf
 xalloc

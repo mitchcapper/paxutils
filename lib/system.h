@@ -28,105 +28,8 @@
 
 #include <sys/stat.h>
 
-/* On MSDOS, there are missing things from <sys/stat.h>.  */
-#if MSDOS
-# define S_ISUID 0
-# define S_ISGID 0
-# define S_ISVTX 0
-#endif
-
-#ifndef S_ISDIR
-# define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
-#endif
-#ifndef S_ISREG
-# define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
-#endif
-
-#ifndef S_ISBLK
-# ifdef S_IFBLK
-#  define S_ISBLK(mode) (((mode) & S_IFMT) == S_IFBLK)
-# else
-#  define S_ISBLK(mode) 0
-# endif
-#endif
-#ifndef S_ISCHR
-# ifdef S_IFCHR
-#  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
-# else
-#  define S_ISCHR(mode) 0
-# endif
-#endif
-#ifndef S_ISCTG
-# ifdef S_IFCTG
-#  define S_ISCTG(mode) (((mode) & S_IFMT) == S_IFCTG)
-# else
-#  define S_ISCTG(mode) 0
-# endif
-#endif
-#ifndef S_ISDOOR
-# define S_ISDOOR(mode) 0
-#endif
-#ifndef S_ISFIFO
-# ifdef S_IFIFO
-#  define S_ISFIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
-# else
-#  define S_ISFIFO(mode) 0
-# endif
-#endif
-#ifndef S_ISLNK
-# ifdef S_IFLNK
-#  define S_ISLNK(mode) (((mode) & S_IFMT) == S_IFLNK)
-# else
-#  define S_ISLNK(mode) 0
-# endif
-#endif
-#ifndef S_ISSOCK
-# ifdef S_IFSOCK
-#  define S_ISSOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)
-# else
-#  define S_ISSOCK(mode) 0
-# endif
-#endif
-
 #if !HAVE_MKFIFO && !defined mkfifo && defined S_IFIFO
 # define mkfifo(file_name, mode) (mknod (file_name, (mode) | S_IFIFO, 0))
-#endif
-
-#ifndef S_ISUID
-# define S_ISUID 0004000
-#endif
-#ifndef S_ISGID
-# define S_ISGID 0002000
-#endif
-#ifndef S_ISVTX
-# define S_ISVTX 0001000
-#endif
-#ifndef S_IRUSR
-# define S_IRUSR 0000400
-#endif
-#ifndef S_IWUSR
-# define S_IWUSR 0000200
-#endif
-#ifndef S_IXUSR
-# define S_IXUSR 0000100
-#endif
-#ifndef S_IRGRP
-# define S_IRGRP 0000040
-#endif
-#ifndef S_IWGRP
-# define S_IWGRP 0000020
-#endif
-#ifndef S_IXGRP
-# define S_IXGRP 0000010
-#endif
-#ifndef S_IROTH
-# define S_IROTH 0000004
-#endif
-#ifndef S_IWOTH
-# define S_IWOTH 0000002
-#endif
-#ifndef S_IXOTH
-# define S_IXOTH 0000001
 #endif
 
 #define MODE_WXUSR	(S_IWUSR | S_IXUSR)
@@ -137,30 +40,6 @@
 
 /* Include <unistd.h> before any preprocessor test of _POSIX_VERSION.  */
 #include <unistd.h>
-
-#ifndef SEEK_SET
-# define SEEK_SET 0
-#endif
-#ifndef SEEK_CUR
-# define SEEK_CUR 1
-#endif
-#ifndef SEEK_END
-# define SEEK_END 2
-#endif
-
-#ifndef STDIN_FILENO
-# define STDIN_FILENO 0
-#endif
-#ifndef STDOUT_FILENO
-# define STDOUT_FILENO 1
-#endif
-#ifndef STDERR_FILENO
-# define STDERR_FILENO 2
-#endif
-
-/* Declare make device, major and minor.  Since major is a function on
-   SVR4, we have to resort to GOT_MAJOR instead of just testing if
-   major is #define'd.  */
 
 #if MAJOR_IN_MKDEV
 # include <sys/mkdev.h>
