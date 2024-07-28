@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 extern int argcv_get (char const *command, char const *delim, char const* cmnt,
-		      int *argc, char ***argv));
+		      int *argc, char ***argv);
 extern int argcv_string (int argc, char **argv, char **string);
 extern int argcv_unescape_char (int c);
 extern int argcv_escape_char (int c);

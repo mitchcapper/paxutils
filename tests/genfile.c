@@ -243,7 +243,7 @@ get_size (const char *str)
   errno = 0;
   intmax_t s = strtoimax (str, &p, 10);
   if (p == str || *p || (errno && errno != ERANGE))
-    errno (EXIT_USAGE, 0, _("Invalid size: %s"), str);
+    error (EXIT_USAGE, 0, _("Invalid size: %s"), str);
   if (s < 0)
     error (EXIT_USAGE, 0, _("Negative size: %s"), str);
   off_t v;
