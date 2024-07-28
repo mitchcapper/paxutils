@@ -20,6 +20,7 @@ parse-datetime
 quote
 quotearg
 safe-read
+std-gnu23
 stdbool
 stdckdint
 stdlib
