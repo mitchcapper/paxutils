@@ -133,10 +133,10 @@ xtonum (const char *src, int base, size_t cnt)
   char tmp[4]; /* At most three characters + zero */
 
   /* Notice: No use to check `cnt'. It should be either 2 or 3 */
-  memcpy (tmp, src, cnt);
-  tmp[cnt] = 0;
+  strncpy (tmp, src, cnt);
+  tmp[cnt] = '\0';
   long int val = strtol (tmp, &p, base);
-  return (*p == 0) ? val : -1;
+  return p == tmp + cnt ? val : -1;
 }
 
 static size_t
@@ -189,7 +189,7 @@ unescape_copy (char *dst, const char *src, size_t n)
 		}
 	      else
 		{
-		  c = xtonum(src, 16, 2);
+		  c = xtonum (src, 16, 2);
 		  if (c == -1)
 		    {
 		      *dst++ = '\\';
@@ -214,7 +214,7 @@ unescape_copy (char *dst, const char *src, size_t n)
 		}
 	      else
 		{
-		  c = xtonum(src, 8, 3);
+		  c = xtonum (src, 8, 3);
 		  if (c == -1)
 		    {
 		      *dst++ = '\\';

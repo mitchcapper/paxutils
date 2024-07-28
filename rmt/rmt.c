@@ -33,8 +33,8 @@
 #include <safe-read.h>
 
 
-int dbglev;
-FILE *dbgout;
+static long int dbglev;
+static FILE *dbgout;
 
 #define DEBUG(lev,msg)						\
   do { if (dbgout && (lev) <= dbglev) fprintf (dbgout, "%s", msg); } \
@@ -78,8 +78,8 @@ trimnl (char *str)
 
 
 
-char *input_buf_ptr;
-size_t input_buf_size;
+static char *input_buf_ptr;
+static size_t input_buf_size;
 
 static char *
 rmt_read (void)
@@ -129,8 +129,8 @@ rmt_error (int code)
 }
 
 
-char *record_buffer_ptr;
-size_t record_buffer_size;
+static char *record_buffer_ptr;
+static size_t record_buffer_size;
 
 static void
 prepare_record_buffer (size_t size)
@@ -144,7 +144,7 @@ prepare_record_buffer (size_t size)
 
 
 
-int device_fd = -1;
+static int device_fd = -1;
 
 struct rmt_kw
 {
@@ -155,7 +155,7 @@ struct rmt_kw
 
 #define RMT_KW(s,v) { #s, sizeof (#s) - 1, v }
 
-static int
+static bool
 xlat_kw (const char *s, const char *pfx,
 	 struct rmt_kw const *kw, int *valp, const char **endp)
 {
@@ -179,10 +179,10 @@ xlat_kw (const char *s, const char *pfx,
 	{
 	  *valp = kw->value;
 	  *endp = s + kw->len;
-	  return 0;
+	  return true;
 	}
     }
-  return 1;
+  return false;
 }
 
 static const char *
@@ -225,62 +225,84 @@ static struct rmt_kw const open_flag_kw[] =
     { nullptr }
   };
 
-static int
-decode_open_flag (const char *mstr, int *pmode)
+static bool
+decode_open_flag (const char *fstr, int *pflag)
 {
-  int numeric_mode = 0;
-  int mode = 0;
-  const char *p;
+  fstr = skip_ws (fstr);
 
-  mstr = skip_ws (mstr);
-  if (c_isdigit (*mstr))
+  long int numeric_flag;
+  if (c_isdigit (*fstr))
     {
-      numeric_mode = strtol (mstr, (char**) &p, 10);
-      mstr = skip_ws (p);
-    }
-
-  if (*mstr)
-    {
-      while (mstr)
+      char *p;
+      errno = 0;
+      numeric_flag = strtol (fstr, &p, 10);
+      if (errno)
 	{
-	  int v;
-
-	  mstr = skip_ws (mstr);
-	  if (*mstr == 0)
-	    break;
-	  else if (c_isdigit (*mstr))
-	    v = strtol (mstr, (char**) &p, 10);
-	  else if (xlat_kw (mstr, "O_", open_flag_kw, &v, &p))
-	    {
-	      rmt_error_message (EINVAL, "invalid open mode");
-	      return 1;
-	    }
-
-	  mode |= v;
-
-	  if (*p && c_isblank (*p))
-	    p = skip_ws (p);
-	  if (*p == 0)
-	    break;
-	  else if (*p == '|')
-	    {
-	      /* FIXMEL
-		 if (p[1] == 0)
-		 rmt_error_message (EINVAL, "invalid open mode");
-	      */
-	      mstr = p + 1;
-	    }
-	  else
-	    {
-	      rmt_error_message (EINVAL, "invalid open mode");
-	      return 1;
-	    }
+	  rmt_error_message (EINVAL, "invalid open flag");
+	  return false;
 	}
+      fstr = skip_ws (p);
     }
   else
-    mode = numeric_mode;
-  *pmode = mode;
-  return 0;
+    numeric_flag = 0;
+
+  int flag;
+  if (*fstr)
+    {
+      flag = 0;
+
+      while (*(fstr = skip_ws (fstr)))
+	{
+	  bool err;
+	  int v;
+	  if (c_isdigit (*fstr))
+	    {
+	      char *p;
+	      errno = 0;
+	      uintmax_t uv = strtoumax (fstr, &p, 10);
+	      if (errno)
+		err = true;
+	      else
+		{
+		  fstr = p;
+		  err = ckd_add (&v, uv, 0);
+		}
+	    }
+	  else
+	    err = !xlat_kw (fstr, "O_", open_flag_kw, &v, &fstr);
+
+	  if (err)
+	    {
+	      rmt_error_message (EINVAL, "invalid open flag");
+	      return 1;
+	    }
+
+	  flag |= v;
+
+	  fstr = skip_ws (fstr);
+	  if (!*fstr)
+	    break;
+	  if (*fstr != '|')
+	    {
+	      rmt_error_message (EINVAL, "invalid open flag");
+	      return false;
+	    }
+
+	  fstr++;
+	  /* FIXME:
+	     if (!*fstr)
+	       rmt_error_message (EINVAL, "invalid open flag");
+	  */
+	}
+    }
+  else if (ckd_add (&flag, numeric_flag, 0))
+    {
+      rmt_error_message (EINVAL, "invalid open flag");
+      return false;
+    }
+
+  *pflag = flag;
+  return true;
 }
 
 
@@ -330,7 +352,7 @@ open_device (char *str)
       DEBUG (1, "unexpected EOF");
       exit (EXIT_FAILURE);
     }
-  if (decode_open_flag (flag_str, &flag) == 0)
+  if (decode_open_flag (flag_str, &flag))
     {
       if (device_fd >= 0)
 	close (device_fd);
@@ -409,6 +431,7 @@ static void
 lseek_device (const char *str)
 {
   char *p;
+  char const *cp;
   int whence;
   off_t off;
   uintmax_t n;
@@ -434,7 +457,7 @@ lseek_device (const char *str)
 	  return;
 	}
     }
-  else if (xlat_kw (str, "SEEK_", seek_whence_kw, &whence, (const char **) &p))
+  else if (!xlat_kw (str, "SEEK_", seek_whence_kw, &whence, &cp))
     {
       rmt_error_message (EINVAL, N_("Invalid seek direction"));
       return;
@@ -592,47 +615,43 @@ static void
 iocop_device (const char *str)
 {
   char *p;
-  long opcode;
-  off_t count;
-  uintmax_t n;
-
-  opcode = strtol (str, &p, 10);
-  if (*p)
+  uintmax_t opcode = (c_isdigit (*p)
+		      ? (errno = 0, strtoumax (str, &p, 10))
+		      : (errno = EINVAL, 0));
+  if (errno || *p)
     {
       rmt_error_message (EINVAL, N_("Invalid operation code"));
       return;
     }
   str = rmt_read ();
-  n = count = strtoumax (str, &p, 10);
-  if (*p)
+  uintmax_t count = (c_isdigit (*p)
+		     ? (errno = 0, strtoumax (str, &p, 10))
+		     : (errno = EINVAL, 0));
+  if (errno || *p)
     {
       rmt_error_message (EINVAL, N_("Invalid byte count"));
       return;
     }
 
-  if (n != count || errno == ERANGE)
+#ifdef MTIOCTOP
+  struct mtop mtop;
+
+  if (ckd_add (&mtop.mt_count, count, 0))
     {
       rmt_error_message (EINVAL, N_("Byte count out of range"));
       return;
     }
 
-#ifdef MTIOCTOP
-  {
-    struct mtop mtop;
+  if (ckd_add (&mtop.mt_op, opcode, 0))
+    {
+      rmt_error_message (EINVAL, N_("Opcode out of range"));
+      return;
+    }
 
-    mtop.mt_count = count;
-    if (mtop.mt_count != count)
-      {
-	rmt_error_message (EINVAL, N_("Byte count out of range"));
-	return;
-      }
-
-    mtop.mt_op = opcode;
-    if (ioctl (device_fd, MTIOCTOP, (char *) &mtop) < 0)
-      rmt_error (errno);
-    else
-      rmt_reply (0);
-  }
+  if (ioctl (device_fd, MTIOCTOP, (char *) &mtop) < 0)
+    rmt_error (errno);
+  else
+    rmt_reply (0);
 #else
   rmt_error_message (ENOSYS, N_("Operation not supported"));
 #endif

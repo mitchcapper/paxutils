@@ -1,6 +1,7 @@
 # List of gnulib modules needed by exportable paxutils files.
 # A module name per line. Empty lines and comments are ignored.
 
+c-ctype
 dirname
 errno
 fcntl-h
@@ -20,8 +21,10 @@ quote
 quotearg
 safe-read
 stdbool
+stdckdint
 stdlib
 strerror
+strtoimax
 strtol
 strtoumax
 sys_stat

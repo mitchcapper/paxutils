@@ -216,38 +216,13 @@ get_status_off (int handle)
 
   if (! status)
     return -1;
-  else
-    {
-      /* Parse status, taking care to check for overflow.
-	 We can't use standard functions,
-	 since off_t might be longer than long.  */
 
-      off_t count = 0;
-      int negative;
-
-      for (;  *status == ' ' || *status == '\t';  status++)
-	continue;
-
-      negative = *status == '-';
-      status += negative || *status == '+';
-
-      for (;;)
-	{
-	  int digit = *status++ - '0';
-	  if (9 < (unsigned) digit)
-	    break;
-	  else
-	    {
-	      off_t c10 = 10 * count;
-	      off_t nc = negative ? c10 - digit : c10 + digit;
-	      if (c10 / 10 != count || (negative ? c10 < nc : nc < c10))
-		return -1;
-	      count = nc;
-	    }
-	}
-
-      return count;
-    }
+  /* Parse status, checking for overflow.  */
+  char *status_end;
+  off_t c;
+  errno = 0;
+  intmax_t count = strtoimax (status, &status_end, 10);
+  return errno || status_end == status || ckd_add (&c, count, 0) ? -1 : c;
 }
 
 #if WITH_REXEC
@@ -442,8 +417,9 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 
   assume (remote_file);
 
-#if HAVE_GETADDRINFO
   /* FIXME: Should somewhat validate the decoding, here.  */
+
+#if HAVE_GETADDRINFO
   struct addrinfo *ai;
   int err = getaddrinfo (remote_host, nullptr, nullptr, &ai);
   if (err)
@@ -664,6 +640,7 @@ off_t
 rmt_lseek__ (int handle, off_t offset, int whence)
 {
   char command_buffer[sizeof "L0\n\n" + INT_STRLEN_BOUND (offset)];
+  intmax_t off = offset;
 
   switch (whence)
     {
@@ -673,7 +650,7 @@ rmt_lseek__ (int handle, off_t offset, int whence)
     default: abort ();
     }
 
-  sprintf (command_buffer, "L%d\n%jd\n", whence, (intmax_t) offset);
+  sprintf (command_buffer, "L%d\n%jd\n", whence, off);
 
   if (do_command (handle, command_buffer) == -1)
     return -1;

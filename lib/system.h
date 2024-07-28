@@ -111,6 +111,7 @@
 
 /* Declare standard functions.  */
 
+#include <stdckdint.h>
 #include <stddef.h>
 #include <stdlib.h>
 

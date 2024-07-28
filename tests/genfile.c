@@ -239,26 +239,16 @@ xlat_suffix (off_t *vp, const char *p)
 static off_t
 get_size (const char *str)
 {
-  const char *p;
-  off_t v = 0;
-
-  for (p = str; *p; p++)
-    {
-      int digit = *p - '0';
-      off_t x = v * 10;
-      if (9 < (unsigned) digit)
-	{
-	  if (xlat_suffix (&v, p))
-	    error (EXIT_USAGE, 0, _("Invalid size: %s"), str);
-	  else
-	    break;
-	}
-      else if (x / 10 != v)
-	error (EXIT_USAGE, 0, _("Number out of allowed range: %s"), str);
-      v = x + digit;
-      if (v < 0)
-	error (EXIT_USAGE, 0, _("Negative size: %s"), str);
-    }
+  char *p;
+  errno = 0;
+  intmax_t s = strtoimax (str, &p, 10);
+  if (p == str || *p || (errno && errno != ERANGE))
+    errno (EXIT_USAGE, 0, _("Invalid size: %s"), str);
+  if (s < 0)
+    error (EXIT_USAGE, 0, _("Negative size: %s"), str);
+  off_t v;
+  if (errno || ckd_add (&v, s, 0))
+    error (EXIT_USAGE, 0, _("Number out of allowed range: %s"), str);
   return v;
 }
 

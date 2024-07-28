@@ -93,7 +93,7 @@ do_command (int handle, const char *buffer)
   /* Save the current pipe handler and try to make the request.  */
 
   size_t length = strlen (buffer);
-  void (*pipe_handler) () = signal (SIGPIPE, SIG_IGN);
+  void (*pipe_handler) (int) = signal (SIGPIPE, SIG_IGN);
   ssize_t written = full_write (WRITE_SIDE (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
 
@@ -110,11 +110,13 @@ static char *
 get_status_string (int handle, char *command_buffer)
 {
   char *cursor;
-  int i;
+  int counter;
 
   /* Read the reply command line.  */
 
-  for (i = 0, cursor = command_buffer; i < COMMAND_BUFFER_SIZE; i++, cursor++)
+  for (counter = 0, cursor = command_buffer;
+       counter < COMMAND_BUFFER_SIZE;
+       counter++, cursor++)
     {
       if (safe_read (READ_SIDE (handle), cursor, 1) != 1)
 	{
@@ -128,7 +130,7 @@ get_status_string (int handle, char *command_buffer)
 	}
     }
 
-  if (i == COMMAND_BUFFER_SIZE)
+  if (counter == COMMAND_BUFFER_SIZE)
     {
       _rmt_shutdown (handle, EIO);
       return nullptr;
@@ -201,38 +203,13 @@ get_status_off (int handle)
 
   if (!status)
     return -1;
-  else
-    {
-      /* Parse status, taking care to check for overflow.
-	 We can't use standard functions,
-	 since off_t might be longer than long.  */
 
-      off_t count = 0;
-      int negative;
-
-      for (;  *status == ' ' || *status == '\t';  status++)
-	continue;
-
-      negative = *status == '-';
-      status += negative || *status == '+';
-
-      for (;;)
-	{
-	  int digit = *status++ - '0';
-	  if (9 < (unsigned) digit)
-	    break;
-	  else
-	    {
-	      off_t c10 = 10 * count;
-	      off_t nc = negative ? c10 - digit : c10 + digit;
-	      if (c10 / 10 != count || (negative ? c10 < nc : nc < c10))
-		return -1;
-	      count = nc;
-	    }
-	}
-
-      return count;
-    }
+  /* Parse status, checking for overflow.  */
+  char *status_end;
+  off_t c;
+  errno = 0;
+  intmax_t count = strtoimax (status, &status_end, 10);
+  return errno || status_end == status || ckd_add (&c, count, 0) ? -1 : c;
 }
 
 #if WITH_REXEC
@@ -293,54 +270,34 @@ encode_oflag (char *buf, int oflag)
 
   switch (oflag & O_ACCMODE)
     {
-    case O_RDONLY:
-      strcat (buf, "O_RDONLY");
-      break;
-
-    case O_RDWR:
-      strcat (buf, "O_RDWR");
-      break;
-
-    case O_WRONLY:
-      strcat (buf, "O_WRONLY");
-      break;
-
-    default:
-      abort ();
+    case O_RDONLY: strcat (buf, "O_RDONLY"); break;
+    case O_RDWR: strcat (buf, "O_RDWR"); break;
+    case O_WRONLY: strcat (buf, "O_WRONLY"); break;
+    default: abort ();
     }
 
 #ifdef O_APPEND
-  if (oflag & O_APPEND)
-    strcat (buf, "|O_APPEND");
+  if (oflag & O_APPEND) strcat (buf, "|O_APPEND");
 #endif
-  if (oflag & O_CREAT)
-    strcat (buf, "|O_CREAT");
+  if (oflag & O_CREAT) strcat (buf, "|O_CREAT");
 #ifdef O_DSYNC
-  if (oflag & O_DSYNC)
-    strcat (buf, "|O_DSYNC");
+  if (oflag & O_DSYNC) strcat (buf, "|O_DSYNC");
 #endif
-  if (oflag & O_EXCL)
-    strcat (buf, "|O_EXCL");
+  if (oflag & O_EXCL) strcat (buf, "|O_EXCL");
 #ifdef O_LARGEFILE
-  if (oflag & O_LARGEFILE)
-    strcat (buf, "|O_LARGEFILE");
+  if (oflag & O_LARGEFILE) strcat (buf, "|O_LARGEFILE");
 #endif
 #ifdef O_NOCTTY
-  if (oflag & O_NOCTTY)
-    strcat (buf, "|O_NOCTTY");
+  if (oflag & O_NOCTTY) strcat (buf, "|O_NOCTTY");
 #endif
-  if (oflag & O_NONBLOCK)
-    strcat (buf, "|O_NONBLOCK");
+  if (oflag & O_NONBLOCK) strcat (buf, "|O_NONBLOCK");
 #ifdef O_RSYNC
-  if (oflag & O_RSYNC)
-    strcat (buf, "|O_RSYNC");
+  if (oflag & O_RSYNC) strcat (buf, "|O_RSYNC");
 #endif
 #ifdef O_SYNC
-  if (oflag & O_SYNC)
-    strcat (buf, "|O_SYNC");
+  if (oflag & O_SYNC) strcat (buf, "|O_SYNC");
 #endif
-  if (oflag & O_TRUNC)
-    strcat (buf, "|O_TRUNC");
+  if (oflag & O_TRUNC) strcat (buf, "|O_TRUNC");
 }
 
 /* Reset user and group IDs to be those of the real user.
@@ -366,8 +323,8 @@ sys_reset_uid_gid (void)
   return nullptr;
 }
 
-/* Open a remote file on the system specified in FILE_NAME, as the given user.
-   FILE_NAME has the form `[USER@]HOST:FILE'.
+/* Open a file (a magnetic tape device?) on the system specified in
+   FILE_NAME, as the given user. FILE_NAME has the form `[USER@]HOST:FILE'.
    OPEN_MODE is O_RDONLY, O_WRONLY, etc.  If successful, return the
    remote pipe number plus BIAS.  REMOTE_SHELL may be overridden.  On
    error, return -1.  */
@@ -440,6 +397,16 @@ rmt_open (const char *file_name, int open_mode, int bias,
 
   /* FIXME: Should somewhat validate the decoding, here.  */
 
+#if HAVE_GETADDRINFO
+  struct addrinfo *ai;
+  int err = getaddrinfo (remote_host, nullptr, nullptr, &ai);
+  if (err)
+    error (EXIT_ON_EXEC_ERROR, err == EAI_SYSTEM ? errno : 0,
+	   _("Cannot connect to %s: %s"),
+	   remote_host, gai_strerror (err));
+  freeaddrinfo (ai);
+#endif
+
   if (remote_user && *remote_user == '\0')
     remote_user = nullptr;
 
@@ -469,7 +436,7 @@ rmt_open (const char *file_name, int open_mode, int bias,
 	remote_shell = REMOTE_SHELL;
 #else
 	free (file_name_copy);
-	errno = EINVAL;
+	errno = EIO;
 	return -1;
 #endif
       }
@@ -477,17 +444,32 @@ rmt_open (const char *file_name, int open_mode, int bias,
 
     /* Set up the pipes for the `rsh' command, and fork.  */
 
-    if (pipe (to_remote[remote_pipe_number]) == -1
-	|| pipe (from_remote[remote_pipe_number]) == -1)
+    if (pipe (to_remote[remote_pipe_number]) < 0)
       {
 	free (file_name_copy);
+	return -1;
+      }
+
+    if (pipe (from_remote[remote_pipe_number]) < 0)
+      {
+	int e = errno;
+	close (to_remote[remote_pipe_number][PREAD]);
+	close (to_remote[remote_pipe_number][PWRITE]);
+	free (file_name_copy);
+	errno = e;
 	return -1;
       }
 
     status = fork ();
     if (status == -1)
       {
+	int e = errno;
+	close (from_remote[remote_pipe_number][PREAD]);
+	close (from_remote[remote_pipe_number][PWRITE]);
+	close (to_remote[remote_pipe_number][PREAD]);
+	close (to_remote[remote_pipe_number][PWRITE]);
 	free (file_name_copy);
+	errno = e;
 	return -1;
       }
 
@@ -495,17 +477,16 @@ rmt_open (const char *file_name, int open_mode, int bias,
       {
 	/* Child.  */
 
-	close (STDIN_FILENO);
-	if (dup (to_remote[remote_pipe_number][PREAD]) != STDIN_FILENO)
-	  error (EXIT_ON_EXEC_ERROR, errno, _("Cannot dup stdin"));
-	close (to_remote[remote_pipe_number][PREAD]);
-	close (to_remote[remote_pipe_number][PWRITE]);
-
-	close (STDOUT_FILENO);
-	if (dup (from_remote[remote_pipe_number][PWRITE]) != STDOUT_FILENO)
-	  error (EXIT_ON_EXEC_ERROR, errno, _("Cannot dup stdout"));
-	close (from_remote[remote_pipe_number][PREAD]);
-	close (from_remote[remote_pipe_number][PWRITE]);
+	if (dup2 (to_remote[remote_pipe_number][PREAD], STDIN_FILENO) < 0
+	    || (to_remote[remote_pipe_number][PREAD] != STDIN_FILENO
+		&& close (to_remote[remote_pipe_number][PREAD]) != 0)
+	    || (to_remote[remote_pipe_number][PWRITE] != STDIN_FILENO
+		&& close (to_remote[remote_pipe_number][PWRITE]) != 0)
+	    || dup2 (from_remote[remote_pipe_number][PWRITE], STDOUT_FILENO) < 0
+	    || close (from_remote[remote_pipe_number][PREAD]) != 0
+	    || close (from_remote[remote_pipe_number][PWRITE]) != 0)
+	  error (EXIT_ON_EXEC_ERROR, errno,
+		 _("Cannot redirect files for remote shell"));
 
 	char const *reseterr = sys_reset_uid_gid ();
 	if (reseterr)
@@ -578,14 +559,15 @@ rmt_close (int handle)
 size_t
 rmt_read (int handle, char *buffer, size_t length)
 {
-  char command_buffer[COMMAND_BUFFER_SIZE];
+  char command_buffer[sizeof "R\n" + INT_STRLEN_BOUND (size_t)];
   size_t status;
   size_t rlen;
   size_t counter;
 
   sprintf (command_buffer, "R%zu\n", length);
   if (do_command (handle, command_buffer) == -1
-      || (status = get_status (handle)) == SAFE_READ_ERROR)
+      || (status = get_status (handle)) == SAFE_READ_ERROR
+      || status > length)
     return SAFE_READ_ERROR;
 
   for (counter = 0; counter < status; counter += rlen, buffer += rlen)
@@ -606,8 +588,8 @@ rmt_read (int handle, char *buffer, size_t length)
 size_t
 rmt_write (int handle, char *buffer, size_t length)
 {
-  char command_buffer[COMMAND_BUFFER_SIZE];
-  void (*pipe_handler) ();
+  char command_buffer[sizeof "W\n" + INT_STRLEN_BOUND (size_t)];
+  void (*pipe_handler) (int);
   size_t written;
 
   sprintf (command_buffer, "W%zu\n", length);
@@ -638,28 +620,18 @@ rmt_write (int handle, char *buffer, size_t length)
 off_t
 rmt_lseek (int handle, off_t offset, int whence)
 {
-  char command_buffer[COMMAND_BUFFER_SIZE];
+  char command_buffer[sizeof "L0\n\n" + INT_STRLEN_BOUND (offset)];
   intmax_t off = offset;
 
   switch (whence)
     {
-    case SEEK_SET:
-      whence = 0;
-      break;
-
-    case SEEK_CUR:
-      whence = 1;
-      break;
-
-    case SEEK_END:
-      whence = 2;
-      break;
-
-    default:
-      abort ();
+    case SEEK_SET: whence = 0; break;
+    case SEEK_CUR: whence = 1; break;
+    case SEEK_END: whence = 2; break;
+    default: abort ();
     }
 
-  sprintf (command_buffer, "L%jd\n%d\n", off, whence);
+  sprintf (command_buffer, "L%d\n%jd\n", whence, off);
 
   if (do_command (handle, command_buffer) == -1)
     return -1;
@@ -670,7 +642,7 @@ rmt_lseek (int handle, off_t offset, int whence)
 /* Perform a raw tape operation on remote tape connection HANDLE.
    Return the results of the ioctl, or -1 on error.  */
 int
-rmt_ioctl (int handle, unsigned long int operation, char *argument)
+rmt_ioctl (int handle, unsigned long int operation, void *argument)
 {
   switch (operation)
     {
@@ -681,13 +653,15 @@ rmt_ioctl (int handle, unsigned long int operation, char *argument)
 #ifdef MTIOCTOP
     case MTIOCTOP:
       {
-	struct mtop *arg = (struct mtop *) argument;
-	char command_buffer[COMMAND_BUFFER_SIZE];
-	intmax_t count = arg->mt_count;
+	struct mtop *mtop = argument;
+	enum { oplen = INT_STRLEN_BOUND (mtop->mt_op) };
+	enum { countlen = INT_STRLEN_BOUND (mtop->mt_count) };
+	char command_buffer[sizeof "I\n\n" + oplen + countlen];
 
 	/* MTIOCTOP is the easy one.  Nothing is transferred in binary.  */
 
-	sprintf (command_buffer, "I%d\n%jd\n", arg->mt_op, count);
+	intmax_t count = mtop->mt_count;
+	sprintf (command_buffer, "I%d\n%jd\n", mtop->mt_op, count);
 	if (do_command (handle, command_buffer) == -1)
 	  return -1;
 
@@ -711,9 +685,15 @@ rmt_ioctl (int handle, unsigned long int operation, char *argument)
 	    || (status = get_status (handle), status == -1))
 	  return -1;
 
-	for (; status > 0; status -= counter, argument += counter)
+	if (status > sizeof (struct mtop))
 	  {
-	    counter = safe_read (READ_SIDE (handle), argument, status);
+	    errno = EOVERFLOW;
+	    return -1;
+	  }
+
+	for (char *p = argument; status > 0; status -= counter, p += counter)
+	  {
+	    counter = safe_read (READ_SIDE (handle), p, status);
 	    if (counter == SAFE_READ_ERROR || counter == 0)
 	      {
 		_rmt_shutdown (handle, EIO);
@@ -726,15 +706,17 @@ rmt_ioctl (int handle, unsigned long int operation, char *argument)
 	   than 256, we will assume that the bytes are swapped and go through
 	   and reverse all the bytes.  */
 
-	if (((struct mtget *) argument)->MTIO_CHECK_FIELD < 256)
+	struct mtget *mtget = argument;
+	if (mtget->MTIO_CHECK_FIELD < 256)
 	  return 0;
 
+	char *buf = argument;
 	for (counter = 0; counter < status; counter += 2)
 	  {
-	    char copy = argument[counter];
+	    char copy = buf[counter];
 
-	    argument[counter] = argument[counter + 1];
-	    argument[counter + 1] = copy;
+	    buf[counter] = buf[counter + 1];
+	    buf[counter + 1] = copy;
 	  }
 
 	return 0;
