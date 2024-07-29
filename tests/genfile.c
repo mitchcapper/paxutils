@@ -208,32 +208,23 @@ static struct argp_option options[] = {
 static char const * const pattern_args[] = { "default", "zeros", nullptr };
 static enum pattern const pattern_types[] = {DEFAULT_PATTERN, ZEROS_PATTERN};
 
-static bool
+/* Multiply *VP by the base denoted by P.
+   Return -1 if invalid, 0 if OK, 1 if overflow.  */
+static int
 xlat_suffix (off_t *vp, const char *p)
 {
-  off_t val = *vp;
+  if (!p[0])
+    return 0;
 
-  if (p[1])
-    return true;
-  switch (p[0])
-    {
-    case 'g':
-    case 'G':
-      *vp *= 1024;
+  if (!p[1])
+    switch (p[0])
+      {
+      case 'k': case 'K': return ckd_mul (vp, *vp, 1 << 10);
+      case 'm': case 'M': return ckd_mul (vp, *vp, 1 << 20);
+      case 'g': case 'G': return ckd_mul (vp, *vp, 1 << 30);
+      }
 
-    case 'm':
-    case 'M':
-      *vp *= 1024;
-
-    case 'k':
-    case 'K':
-      *vp *= 1024;
-      break;
-
-    default:
-      return true;
-    }
-  return *vp <= val;
+  return -1;
 }
 
 static off_t
@@ -242,12 +233,17 @@ get_size (const char *str)
   char *p;
   errno = 0;
   intmax_t s = strtoimax (str, &p, 10);
-  if (p == str || *p || (errno && errno != ERANGE))
+  if (p == str || (errno && errno != ERANGE))
     error (EXIT_USAGE, 0, _("Invalid size: %s"), str);
   if (s < 0)
     error (EXIT_USAGE, 0, _("Negative size: %s"), str);
   off_t v;
   if (errno || ckd_add (&v, s, 0))
+    error (EXIT_USAGE, 0, _("Number out of allowed range: %s"), str);
+  int bad_suffix = xlat_suffix (&v, p);
+  if (bad_suffix < 0)
+    error (EXIT_USAGE, 0, _("Invalid size: %s"), str);
+  if (bad_suffix)
     error (EXIT_USAGE, 0, _("Number out of allowed range: %s"), str);
   return v;
 }
