@@ -64,7 +64,7 @@ static off_t seek_offset = 0;
 static enum pattern pattern = DEFAULT_PATTERN;
 
 /* Next checkpoint number */
-uintmax_t checkpoint;
+intmax_t checkpoint;
 
 enum genfile_mode
   {
@@ -84,12 +84,12 @@ enum genfile_mode mode = mode_generate;
 static char *stat_format = DEFAULT_STAT_FORMAT;
 
 /* Size of a block for sparse file */
-size_t block_size = 512;
+idx_t block_size = 512;
 
 /* Block buffer for sparse file */
 char *buffer;
 
-/* Checkpoint granularity for mode == mode_exec */
+/* Checkpoint granularity option for mode == mode_exec */
 char *checkpoint_granularity;
 
 /* Time for --touch option */
@@ -258,7 +258,7 @@ verify_file (char *file_name)
       if (stat (file_name, &st))
 	error (0, errno, _("stat(%s) failed"), file_name);
 
-      if (st.st_size != file_length + seek_offset)
+      if (st.st_size < 0 || st.st_size - seek_offset != file_length)
 	{
 	  intmax_t requested = st.st_size, actual = file_length;
 	  error (EXIT_FAILURE, 0, _("requested file length %jd, actual %jd"),
@@ -273,7 +273,7 @@ verify_file (char *file_name)
 struct action
 {
   struct action *next;
-  uintmax_t checkpoint;
+  intmax_t checkpoint;
   int action;
   char *name;
   off_t size;
@@ -286,7 +286,7 @@ static struct action *action_head, *action_tail;
 void
 reg_action (int action, char *arg)
 {
-  struct action *act = xmalloc (sizeof (*act));
+  struct action *act = ximalloc (sizeof *act);
   act->checkpoint = checkpoint;
   act->action = action;
   act->pattern = pattern;
@@ -323,7 +323,11 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case 'b':
-      block_size = get_size (arg);
+      {
+	off_t s = get_size (arg);
+	if (ckd_add (&block_size, s, 0))
+	  error (EXIT_USAGE, 0, _("Number out of allowed range: %s"), arg);
+      }
       break;
 
     case 'q':
@@ -349,8 +353,16 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case 'r':
-      mode = mode_exec;
-      checkpoint_granularity = arg ? arg : "1";
+      {
+	mode = mode_exec;
+	if (!arg)
+	  arg = "1";
+	static char const opt[] = "--checkpoint=";
+	idx_t arglen = strlen (arg);
+	checkpoint_granularity = ximalloc (sizeof opt + arglen);
+	memcpy (checkpoint_granularity, opt, sizeof opt - 1);
+	memcpy (checkpoint_granularity + sizeof opt - 1, arg, arglen + 1);
+      }
       break;
 
     case 'T':
@@ -364,9 +376,8 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case OPT_CHECKPOINT:
       {
 	char *p;
-
-	checkpoint = strtoumax (arg, &p, 0);
-	if (*p)
+	checkpoint = strtoimax (arg, &p, 0);
+	if (checkpoint < 0 || *p)
 	  argp_error (state, _("Error parsing number near `%s'"), p);
       }
       break;
@@ -408,17 +419,15 @@ static struct argp argp = {
 void
 fill (FILE *fp, off_t length, enum pattern pattern)
 {
-  off_t i;
-
   switch (pattern)
     {
     case DEFAULT_PATTERN:
-      for (i = 0; i < length; i++)
+      for (off_t i = 0; i < length; i++)
 	fputc (i & 255, fp);
       break;
 
     case ZEROS_PATTERN:
-      for (i = 0; i < length; i++)
+      for (off_t i = 0; i < length; i++)
 	fputc (0, fp);
       break;
     }
@@ -439,7 +448,7 @@ generate_simple_file (char *filename)
   else
     fp = stdout;
 
-  if (fseeko (fp, seek_offset, 0))
+  if (fseeko (fp, seek_offset, SEEK_SET) < 0)
     error (EXIT_FAILURE, errno, "%s", _("cannot seek"));
 
   fill (fp, file_length, pattern);
@@ -452,10 +461,13 @@ static bool
 read_name_from_file (FILE *fp, struct obstack *stk)
 {
   int c;
-  size_t counter = 0;
+  idx_t counter = 0;
 
-  for (c = getc (fp); c != EOF && c != filename_terminator; c = getc (fp))
+  while (true)
     {
+      c = getc (fp);
+      if (c < 0 || c == filename_terminator)
+	break;
       if (c == 0)
 	error (EXIT_FAILURE, 0, _("file name contains null character"));
       obstack_1grow (stk, c);
@@ -464,7 +476,7 @@ read_name_from_file (FILE *fp, struct obstack *stk)
 
   obstack_1grow (stk, 0);
 
-  return (counter == 0 && c == EOF);
+  return c < 0 && counter == 0;
 }
 
 void
@@ -497,31 +509,34 @@ mkhole (int fd, off_t displ)
   off_t offset = lseek (fd, displ, SEEK_CUR);
   if (offset < 0)
     error (EXIT_FAILURE, errno, "lseek");
-  if (ftruncate (fd, offset) != 0)
+  if (ftruncate (fd, offset) < 0)
     error (EXIT_FAILURE, errno, "ftruncate");
 }
 
 static void
 mksparse (int fd, off_t displ, char *marks)
 {
-  if (lseek (fd, displ, SEEK_CUR) == -1)
+  if (lseek (fd, displ, SEEK_CUR) < 0)
     error (EXIT_FAILURE, errno, "lseek");
 
   for (; *marks; marks++)
     {
       memset (buffer, *marks, block_size);
-      if (write (fd, buffer, block_size) != block_size)
+      ssize_t written = write (fd, buffer, block_size);
+      if (written < 0)
 	error (EXIT_FAILURE, errno, "write");
+      if (written != block_size)
+	error (EXIT_FAILURE, 0, "write");
     }
 }
 
 static bool
 make_fragment (int fd, char *offstr, char *mapstr)
 {
-  int i;
   off_t displ = get_size (offstr);
 
-  file_length += displ;
+  if (ckd_add (&file_length, file_length, displ))
+    error (EXIT_USAGE, 0, _("Number out of allowed range: %s"), offstr);
 
   if (!mapstr || !*mapstr)
     {
@@ -535,7 +550,7 @@ make_fragment (int fd, char *offstr, char *mapstr)
       switch (pattern)
 	{
 	case DEFAULT_PATTERN:
-	  for (i = 0; i < block_size; i++)
+	  for (idx_t i = 0; i < block_size; i++)
 	    buffer[i] = i & 255;
 	  break;
 
@@ -544,20 +559,24 @@ make_fragment (int fd, char *offstr, char *mapstr)
 	  break;
 	}
 
-      if (lseek (fd, displ, SEEK_CUR) == -1)
+      if (lseek (fd, displ, SEEK_CUR) < 0)
 	error (EXIT_FAILURE, errno, "lseek");
 
       for (; n; n--)
 	{
-	  if (write (fd, buffer, block_size) != block_size)
+	  ssize_t written = write (fd, buffer, block_size);
+	  if (written < 0)
 	    error (EXIT_FAILURE, errno, "write");
+	  if (written != block_size)
+	    error (EXIT_FAILURE, 0, "write");
 	  file_length += block_size;
 	}
     }
   else
     {
-      file_length += block_size * strlen (mapstr);
       mksparse (fd, displ, mapstr);
+      off_t mapstrlen = strlen (mapstr);
+      file_length += block_size * mapstrlen;
     }
   return false;
 }
@@ -577,7 +596,7 @@ generate_sparse_file (int argc, char **argv)
   if (fd < 0)
     error (EXIT_FAILURE, errno, _("cannot open `%s'"), file_name);
 
-  buffer = xmalloc (block_size);
+  buffer = ximalloc (block_size);
 
   file_length = 0;
 
@@ -588,9 +607,9 @@ generate_sparse_file (int argc, char **argv)
 	  char buf[256];
 	  while (fgets (buf, sizeof (buf), stdin))
 	    {
-	      size_t n = strlen (buf);
+	      idx_t n = strlen (buf);
 
-	      while (n > 0 && c_isspace (buf[n-1]))
+	      while (n > 0 && c_isspace (buf[n - 1]))
 		buf[--n] = 0;
 
 	      n = strcspn (buf, " \t");
@@ -644,7 +663,6 @@ print_time (time_t t)
 void
 print_stat (const char *name)
 {
-  char *fmt, *p;
   struct stat st;
 
   if ((no_dereference_option ? lstat : stat) (name, &st))
@@ -653,10 +671,10 @@ print_stat (const char *name)
       return;
     }
 
-  fmt = strdup (stat_format);
-  for (p = strtok (fmt, ","); p; )
+  char *fmt = strdup (stat_format);
+  for (char *p = strtok (fmt, ","); p; )
     {
-      if (memcmp (p, "st_", 3) == 0)
+      if (strncmp (p, "st_", 3) == 0)
 	p += 3;
       if (strcmp (p, "name") == 0)
 	printf ("%s", name);
@@ -731,7 +749,9 @@ set_times (char const *name)
   struct timespec ts[2];
 
   ts[0] = ts[1] = touch_time;
-  if (utimensat (AT_FDCWD, name, ts, no_dereference_option ? AT_SYMLINK_NOFOLLOW : 0) != 0)
+  if (utimensat (AT_FDCWD, name, ts,
+		 no_dereference_option ? AT_SYMLINK_NOFOLLOW : 0)
+      < 0)
     {
       error (EXIT_FAILURE, errno, _("cannot set time on `%s'"), name);
     }
@@ -743,7 +763,7 @@ void
 exec_checkpoint (struct action *p)
 {
   if (verbose)
-    printf ("processing checkpoint %ju\n", p->checkpoint);
+    printf ("processing checkpoint %jd\n", p->checkpoint);
   switch (p->action)
     {
     case OPT_TOUCH:
@@ -751,7 +771,9 @@ exec_checkpoint (struct action *p)
 	struct timespec ts[2];
 
 	ts[0] = ts[1] = p->ts;
-	if (utimensat (AT_FDCWD, p->name, ts, no_dereference_option ? AT_SYMLINK_NOFOLLOW : 0) != 0)
+	if (utimensat (AT_FDCWD, p->name, ts,
+		       no_dereference_option ? AT_SYMLINK_NOFOLLOW : 0)
+	    < 0)
 	  {
 	    error (0, errno, _("cannot set time on `%s'"), p->name);
 	    break;
@@ -776,12 +798,12 @@ exec_checkpoint (struct action *p)
     case OPT_TRUNCATE:
       {
 	int fd = open (p->name, O_RDWR | O_BINARY);
-	if (fd == -1)
+	if (fd < 0)
 	  {
 	    error (0, errno, _("cannot open `%s'"), p->name);
 	    break;
 	  }
-	if (ftruncate (fd, p->size) != 0)
+	if (ftruncate (fd, p->size) < 0)
 	  {
 	    error (0, errno, _("cannot truncate `%s'"), p->name);
 	    break;
@@ -816,11 +838,11 @@ exec_checkpoint (struct action *p)
 }
 
 void
-process_checkpoint (uintmax_t n)
+process_checkpoint (intmax_t n)
 {
-  struct action *p, *prev = nullptr;
+  struct action *prev = nullptr;
 
-  for (p = action_head; p; )
+  for (struct action *p = action_head; p; )
     {
       struct action *next = p->next;
 
@@ -848,45 +870,31 @@ process_checkpoint (uintmax_t n)
 void
 exec_command (int argc, char **argv)
 {
-  int status;
-  pid_t pid;
-  int fd[2];
-  char *p;
-  FILE *fp;
-  char buf[128];
-  int xargc;
-  char **xargv;
-  int i;
-  char checkpoint_option[80];
-
   /* Insert --checkpoint option.
      FIXME: This assumes that argv does not use traditional tar options
      (without dash).
   */
-  xargc = argc + 5;
-  xargv = xcalloc (xargc + 1, sizeof (xargv[0]));
+  int xargc = argc + 5;
+  char **xargv = xinmalloc (xargc + 1, sizeof *xargv);
   xargv[0] = argv[0];
-  snprintf (checkpoint_option, sizeof (checkpoint_option),
-	    "--checkpoint=%s", checkpoint_granularity);
-  xargv[1] = checkpoint_option;
+  xargv[1] = checkpoint_granularity;
   xargv[2] = "--checkpoint-action";
   xargv[3] = "echo=" CHECKPOINT_TEXT " %u";
   xargv[4] = "--checkpoint-action";
   xargv[5] = "wait=SIGUSR1";
-
-  for (i = 1; i <= argc; i++)
-    xargv[i + 5] = argv[i];
+  memcpy (&xargv[6], &argv[1], argc * sizeof *xargv);
 
 #ifdef SIGCHLD
   /* System V fork+wait does not work if SIGCHLD is ignored.  */
   signal (SIGCHLD, SIG_DFL);
 #endif
 
-  if (pipe (fd) != 0)
+  int fd[2];
+  if (pipe (fd) < 0)
     error (EXIT_FAILURE, errno, "pipe");
 
-  pid = fork ();
-  if (pid == -1)
+  pid_t pid = fork ();
+  if (pid < 0)
     error (EXIT_FAILURE, errno, "fork");
 
   if (pid == 0)
@@ -894,8 +902,7 @@ exec_command (int argc, char **argv)
       /* Child */
 
       /* Pipe stderr */
-      if (fd[1] != 2)
-	dup2 (fd[1], 2);
+      dup2 (fd[1], STDERR_FILENO);
       close (fd[0]);
 
       /* Make sure POSIX locale is used */
@@ -907,12 +914,16 @@ exec_command (int argc, char **argv)
 
   /* Master */
   close (fd[1]);
-  fp = fdopen (fd[0], "rb");
+  FILE *fp = fdopen (fd[0], "rb");
   if (!fp)
     error (EXIT_FAILURE, errno, "fdopen");
 
-  while ((p = fgets (buf, sizeof buf, fp)))
+  while (true)
     {
+      char buf[128];
+      char *p = fgets (buf, sizeof buf, fp);
+      if (!p)
+	break;
       while (*p && !c_isspace (*p) && *p != ':')
 	p++;
 
@@ -922,11 +933,11 @@ exec_command (int argc, char **argv)
 	    ;
 
 	  if (*p
-	      && memcmp (p, CHECKPOINT_TEXT, sizeof CHECKPOINT_TEXT - 1) == 0)
+	      && strncmp (p, CHECKPOINT_TEXT, sizeof CHECKPOINT_TEXT - 1) == 0)
 	    {
 	      char *end;
-	      uintmax_t n = strtoumax (p + sizeof CHECKPOINT_TEXT - 1,
-				       &end, 10);
+	      intmax_t n = strtoimax (p + sizeof CHECKPOINT_TEXT - 1,
+				      &end, 10);
 	      if (!(*end && !c_isspace (*end)))
 		{
 		  process_checkpoint (n);
@@ -939,6 +950,7 @@ exec_command (int argc, char **argv)
     }
 
   /* Collect exit status */
+  int status;
   waitpid (pid, &status, 0);
 
   if (verbose)
