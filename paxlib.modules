@@ -4,6 +4,7 @@
 argp
 argp-version-etc
 c-ctype
+configmake
 dirname
 errno
 error
