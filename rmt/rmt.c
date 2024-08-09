@@ -615,7 +615,7 @@ static void
 iocop_device (const char *str)
 {
   char *p;
-  uintmax_t opcode = (c_isdigit (*p)
+  uintmax_t opcode = (c_isdigit (*str)
 		      ? (errno = 0, strtoumax (str, &p, 10))
 		      : (errno = EINVAL, 0));
   if (errno || *p)
@@ -624,7 +624,7 @@ iocop_device (const char *str)
       return;
     }
   str = rmt_read ();
-  uintmax_t count = (c_isdigit (*p)
+  uintmax_t count = (c_isdigit (*str)
 		     ? (errno = 0, strtoumax (str, &p, 10))
 		     : (errno = EINVAL, 0));
   if (errno || *p)
