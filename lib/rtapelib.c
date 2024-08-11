@@ -48,9 +48,6 @@
 # include <netdb.h>
 #endif
 
-#include <rmt.h>
-#include <rmt-command.h>
-
 /* Exit status if exec errors.  */
 #define EXIT_ON_EXEC_ERROR 128
 
@@ -75,6 +72,13 @@ static int from_remote[MAXUNIT][2] = {{-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
 /* The pipes for sending data to remote tape drives.  */
 static int to_remote[MAXUNIT][2] = {{-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
 
+/* ../paxlib/rtape.c #defines PAXLIB_RTAPE.  */
+#ifdef PAXLIB_RTAPE
+# include <localedir.h> /* for DEFAULT_RMT_COMMAND */
+#else
+# include <rmt.h>
+# include <rmt-command.h>
+
 char const *rmt_command = DEFAULT_RMT_COMMAND;
 
 /* Temporary variable used by macros in rmt.h.  */
@@ -83,6 +87,17 @@ char const *rmt_dev_name__;
 /* If true, always consider file names to be local, even if they contain
    colons */
 bool force_local_option;
+
+# define _rmt_rexec (host, user, rmt_command) _rmt_rexec (host, user)
+# define rmt_open(file_name, open_mode, bias, remote_shell, rmt_command) \
+    rmt_open__ (file_name, open_mode, bias, remote_shell)
+# define rmt_close(handle) rmt_close__ (handle)
+# define rmt_read(handle, buffer, length) rmt_read__ (handle, buffer, length)
+# define rmt_write(handle, buffer, length) rmt_write__ (handle, buffer, length)
+# define rmt_lseek(handle, offset, whence) rmt_lseek__ (handle, offset, whence)
+# define rmt_ioctl(handle, operation, argument) \
+    rmt_ioctl__ (handle, operation, argument)
+#endif
 
 
 
@@ -237,7 +252,7 @@ get_status_off (int handle)
    password info.  This may be unacceptable, and .rhosts files for use
    with rsh are much more common on BSD systems.  */
 static int
-_rmt_rexec (char *host, char *user)
+_rmt_rexec (char *host, char const *user, char const *rmt_command)
 {
   int saved_stdin = dup (STDIN_FILENO);
   int saved_stdout = dup (STDOUT_FILENO);
@@ -349,8 +364,8 @@ sys_reset_uid_gid (void)
    remote pipe number plus BIAS.  REMOTE_SHELL may be overridden.  On
    error, return -1.  */
 int
-rmt_open__ (const char *file_name, int open_mode, int bias,
-            const char *remote_shell)
+rmt_open (char const *file_name, int open_mode, int bias,
+	  char const *remote_shell, char const *rmt_command)
 {
   int remote_pipe_number;	/* pseudo, biased file descriptor */
   char *file_name_copy;		/* copy of file_name string */
@@ -515,12 +530,14 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 	  error (EXIT_ON_EXEC_ERROR, errno,
 		 _("Cannot reset uid and gid: %s"), reseterr);
 
+	char const *cmd = rmt_command ? rmt_command : DEFAULT_RMT_COMMAND;
+
 	if (remote_user)
 	  execl (remote_shell, remote_shell_basename, remote_host,
-		 "-l", remote_user, rmt_command, nullptr);
+		 "-l", remote_user, cmd, nullptr);
 	else
 	  execl (remote_shell, remote_shell_basename, remote_host,
-		 rmt_command, nullptr);
+		 cmd, nullptr);
 
 	/* Bad problems if we get here.  */
 
@@ -561,7 +578,7 @@ rmt_open__ (const char *file_name, int open_mode, int bias,
 /* Close remote tape connection HANDLE and shut down.  Return 0 if
    successful, -1 on error.  */
 int
-rmt_close__ (int handle)
+rmt_close (int handle)
 {
   long int status;
 
@@ -576,7 +593,7 @@ rmt_close__ (int handle)
 /* Read up to LENGTH bytes into BUFFER from remote tape connection HANDLE.
    Return the number of bytes read on success, SAFE_READ_ERROR on error.  */
 size_t
-rmt_read__ (int handle, char *buffer, size_t length)
+rmt_read (int handle, char *buffer, size_t length)
 {
   char command_buffer[sizeof "R\n" + INT_STRLEN_BOUND (size_t)];
   size_t status;
@@ -605,7 +622,7 @@ rmt_read__ (int handle, char *buffer, size_t length)
 /* Write LENGTH bytes from BUFFER to remote tape connection HANDLE.
    Return the number of bytes written.  */
 size_t
-rmt_write__ (int handle, char *buffer, size_t length)
+rmt_write (int handle, char *buffer, size_t length)
 {
   char command_buffer[sizeof "W\n" + INT_STRLEN_BOUND (size_t)];
   void (*pipe_handler) (int);
@@ -637,7 +654,7 @@ rmt_write__ (int handle, char *buffer, size_t length)
 /* Perform an imitation lseek operation on remote tape connection
    HANDLE.  Return the new file offset if successful, -1 if on error.  */
 off_t
-rmt_lseek__ (int handle, off_t offset, int whence)
+rmt_lseek (int handle, off_t offset, int whence)
 {
   char command_buffer[sizeof "L0\n\n" + INT_STRLEN_BOUND (offset)];
   intmax_t off = offset;
@@ -661,7 +678,7 @@ rmt_lseek__ (int handle, off_t offset, int whence)
 /* Perform a raw tape operation on remote tape connection HANDLE.
    Return the results of the ioctl, or -1 on error.  */
 int
-rmt_ioctl__ (int handle, unsigned long int operation, void *argument)
+rmt_ioctl (int handle, unsigned long int operation, void *argument)
 {
   switch (operation)
     {
