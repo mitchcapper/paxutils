@@ -120,9 +120,9 @@ do_command (int handle, const char *buffer)
 {
   /* Save the current pipe handler and try to make the request.  */
 
-  size_t length = strlen (buffer);
+  idx_t length = strlen (buffer);
   void (*pipe_handler) (int) = signal (SIGPIPE, SIG_IGN);
-  ssize_t written = full_write (WRITE_SIDE (handle), buffer, length);
+  idx_t written = full_write (WRITE_SIDE (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
 
   if (written == length)
@@ -590,30 +590,34 @@ rmt_close (int handle)
   return status;
 }
 
-/* Read up to LENGTH bytes into BUFFER from remote tape connection HANDLE.
-   Return the number of bytes read on success, SAFE_READ_ERROR on error.  */
-size_t
-rmt_read (int handle, char *buffer, size_t length)
+/* Read from remote tape connection HANDLE into BUFFER, of size LENGTH.
+   Return the number of bytes read on success, -1 (setting errno) on error.  */
+ptrdiff_t
+rmt_read (int handle, char *buffer, idx_t length)
 {
   char command_buffer[sizeof "R\n" + INT_STRLEN_BOUND (size_t)];
-  size_t status;
-  size_t rlen;
-  size_t counter;
+  sprintf (command_buffer, "R%jd\n", length);
+  int done = do_command (handle, command_buffer);
+  if (done < 0)
+    return done;
 
-  sprintf (command_buffer, "R%zu\n", length);
-  if (do_command (handle, command_buffer) == -1
-      || (status = get_status (handle)) == SAFE_READ_ERROR
-      || status > length)
-    return SAFE_READ_ERROR;
-
-  for (counter = 0; counter < status; counter += rlen, buffer += rlen)
+  long int status = get_status (handle);
+  if (! (0 <= status && status <= length))
     {
-      rlen = safe_read (READ_SIDE (handle), buffer, status - counter);
-      if (rlen == SAFE_READ_ERROR || rlen == 0)
+      _rmt_shutdown (handle, EIO);
+      return -1;
+    }
+
+  for (idx_t counter = 0; counter < status; )
+    {
+      ptrdiff_t rlen = safe_read (READ_SIDE (handle),
+				  buffer + counter, status - counter);
+      if (rlen <= 0)
 	{
 	  _rmt_shutdown (handle, EIO);
-	  return SAFE_READ_ERROR;
+	  return -1;
 	}
+      counter += rlen;
     }
 
   return status;
@@ -621,19 +625,18 @@ rmt_read (int handle, char *buffer, size_t length)
 
 /* Write LENGTH bytes from BUFFER to remote tape connection HANDLE.
    Return the number of bytes written.  */
-size_t
-rmt_write (int handle, char *buffer, size_t length)
+idx_t
+rmt_write (int handle, char *buffer, idx_t length)
 {
-  char command_buffer[sizeof "W\n" + INT_STRLEN_BOUND (size_t)];
+  char command_buffer[sizeof "W\n" + INT_STRLEN_BOUND (idx_t)];
   void (*pipe_handler) (int);
-  size_t written;
 
-  sprintf (command_buffer, "W%zu\n", length);
-  if (do_command (handle, command_buffer) == -1)
+  sprintf (command_buffer, "W%jd\n", length);
+  if (do_command (handle, command_buffer) < 0)
     return 0;
 
   pipe_handler = signal (SIGPIPE, SIG_IGN);
-  written = full_write (WRITE_SIDE (handle), buffer, length);
+  idx_t written = full_write (WRITE_SIDE (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
   if (written == length)
     {
@@ -709,8 +712,7 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
     case MTIOCGET:
       {
 	struct mtget *mtget = argument;
-	ssize_t status;
-	size_t counter;
+	long int status;
 
 	/* Grab the status and read it directly into the structure.  This
 	   assumes that the status buffer is not padded and that 2 shorts
@@ -728,14 +730,16 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	    return -1;
 	  }
 
-	for (char *p = argument; status > 0; status -= counter, p += counter)
+	for (char *p = argument; status > 0; )
 	  {
-	    counter = safe_read (READ_SIDE (handle), p, status);
-	    if (counter == SAFE_READ_ERROR || counter == 0)
+	    ptrdiff_t rlen = safe_read (READ_SIDE (handle), p, status);
+	    if (rlen <= 0)
 	      {
 		_rmt_shutdown (handle, EIO);
 		return -1;
 	      }
+	    status -= rlen;
+	    p += rlen;
 	  }
 
 	/* Check for byte position.  mt_type (or mt_model) is a small integer
@@ -748,7 +752,7 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 
 	char *buf = argument;
 	static_assert (sizeof *mtget % 2 == 0);
-	for (counter = 0; counter < sizeof *mtget; counter += 2)
+	for (idx_t counter = 0; counter < sizeof *mtget; counter += 2)
 	  {
 	    char copy = buf[counter];
 

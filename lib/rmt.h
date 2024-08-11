@@ -22,8 +22,8 @@ extern char const *rmt_dev_name__;
 
 int rmt_open__ (const char *, int, int, const char *);
 int rmt_close__ (int);
-size_t rmt_read__ (int, char *, size_t);
-size_t rmt_write__ (int, char *, size_t);
+ptrdiff_t rmt_read__ (int, char *, idx_t);
+idx_t rmt_write__ (int, char *, idx_t);
 off_t rmt_lseek__ (int, off_t, int);
 int rmt_ioctl__ (int, unsigned long int, void *);
 

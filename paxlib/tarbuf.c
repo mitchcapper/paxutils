@@ -105,10 +105,8 @@ static pax_io_status_t
 remote_reader (void *closure, void *data, size_t size, size_t *ret_size)
 {
   tar_archive_t *tar = closure;
-  size_t s;
-
-  s = rmt_read (tar->fd, data, size);
-  if (s == SAFE_READ_ERROR)
+  ptrdiff_t s = rmt_read (tar->fd, data, size);
+  if (s < 0)
     return pax_io_failure;
   if (s == 0)
     return pax_io_eof;

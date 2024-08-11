@@ -507,26 +507,24 @@ static void
 read_device (const char *str)
 {
   char *p;
-  size_t size;
-  uintmax_t n;
-  size_t status;
-
-  n = size = strtoumax (str, &p, 10);
-  if (*p)
+  errno = 0;
+  uintmax_t n = strtoumax (str, &p, 10);
+  if (p == str || *p)
     {
       rmt_error_message (EINVAL, N_("Invalid byte count"));
       return;
     }
 
-  if (n != size || errno == ERANGE)
+  idx_t size;
+  if (ckd_add (&size, n, 0) || errno == ERANGE)
     {
       rmt_error_message (EINVAL, N_("Byte count out of range"));
       return;
     }
 
   prepare_record_buffer (size);
-  status = safe_read (device_fd, record_buffer_ptr, size);
-  if (status == SAFE_READ_ERROR)
+  ptrdiff_t status = safe_read (device_fd, record_buffer_ptr, size);
+  if (status < 0)
     rmt_error (errno);
   else
     {
@@ -558,18 +556,15 @@ static void
 write_device (const char *str)
 {
   char *p;
-  size_t size;
-  uintmax_t n;
-  size_t status;
-
-  n = size = strtoumax (str, &p, 10);
-  if (*p)
+  uintmax_t n = strtoumax (str, &p, 10);
+  if (p == str || *p)
     {
       rmt_error_message (EINVAL, N_("Invalid byte count"));
       return;
     }
 
-  if (n != size || errno == ERANGE)
+  idx_t size;
+  if (ckd_add (&size, n, 0))
     {
       rmt_error_message (EINVAL, N_("Byte count out of range"));
       return;
@@ -585,7 +580,7 @@ write_device (const char *str)
       return;
     }
 
-  status = full_write (device_fd, record_buffer_ptr, size);
+  idx_t status = full_write (device_fd, record_buffer_ptr, size);
   if (status != size)
     rmt_error (errno);
   else
@@ -688,12 +683,12 @@ status_device (const char *str)
   {
     struct mtget mtget;
 
-    if (ioctl (device_fd, MTIOCGET, (char *) &mtget) < 0)
+    if (ioctl (device_fd, MTIOCGET, &mtget) < 0)
       rmt_error (errno);
     else
       {
-	rmt_reply (sizeof (mtget));
-	full_write (STDOUT_FILENO, (char *) &mtget, sizeof (mtget));
+	rmt_reply (sizeof mtget);
+	full_write (STDOUT_FILENO, &mtget, sizeof mtget);
       }
   }
 #else
