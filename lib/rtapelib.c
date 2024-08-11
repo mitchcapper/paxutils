@@ -747,7 +747,8 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	  return 0;
 
 	char *buf = argument;
-	for (counter = 0; counter < status; counter += 2)
+	static_assert (sizeof *mtget % 2 == 0);
+	for (counter = 0; counter < sizeof *mtget; counter += 2)
 	  {
 	    char copy = buf[counter];
 

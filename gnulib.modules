@@ -1,6 +1,7 @@
 # List of gnulib modules needed by exportable paxutils files.
 # A module name per line. Empty lines and comments are ignored.
 
+assert-h
 c-ctype
 dirname
 errno
