@@ -708,6 +708,7 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 #ifdef MTIOCGET
     case MTIOCGET:
       {
+	struct mtget *mtget = argument;
 	ssize_t status;
 	size_t counter;
 
@@ -721,9 +722,9 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	    || (status = get_status (handle), status == -1))
 	  return -1;
 
-	if (status > sizeof (struct mtop))
+	if (status != sizeof *mtget)
 	  {
-	    errno = EOVERFLOW;
+	    _rmt_shutdown (handle, EIO);
 	    return -1;
 	  }
 
@@ -742,7 +743,6 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	   than 256, we will assume that the bytes are swapped and go through
 	   and reverse all the bytes.  */
 
-	struct mtget *mtget = argument;
 	if (mtget->MTIO_CHECK_FIELD < 256)
 	  return 0;
 
