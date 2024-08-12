@@ -586,9 +586,11 @@ rmt_open (char const *file_name, int oflags, int bias,
   /* Attempt to open the tape device.  */
 
   {
-    size_t remote_file_len = strlen (remote_file);
-    char *command_buffer = xmalloc (remote_file_len + 1000);
-    sprintf (command_buffer, "O%s\n", remote_file);
+    idx_t remote_file_len = strlen (remote_file);
+    char *command_buffer = ximalloc (remote_file_len + 1000);
+    *command_buffer = 'O';
+    memcpy (command_buffer + 1, remote_file, remote_file_len);
+    command_buffer[remote_file_len + 1] = '\n';
     if (!encode_oflags (command_buffer + remote_file_len + 2, oflags))
       {
 	free (command_buffer);
