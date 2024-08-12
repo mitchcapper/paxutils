@@ -326,8 +326,8 @@ _rmt_rexec (char *host, char const *user, char const *rmt_command)
 /* Place into BUF a string representing OFLAGS, which must be suitable
    as argument 2 of 'open'.  BUF must be large enough to hold the
    result.  This function should generate a string that decode_oflags
-   can parse.  */
-static void
+   can parse.  Return true if successful, false if OFLAGS is invalid.  */
+static bool
 encode_oflags (char *buf, int oflags)
 {
   sprintf (buf, "%d ", oflags);
@@ -337,7 +337,7 @@ encode_oflags (char *buf, int oflags)
     case O_RDONLY: strcat (buf, "O_RDONLY"); break;
     case O_RDWR: strcat (buf, "O_RDWR"); break;
     case O_WRONLY: strcat (buf, "O_WRONLY"); break;
-    default: abort ();
+    default: return false;
     }
 
 #ifdef O_APPEND
@@ -362,6 +362,7 @@ encode_oflags (char *buf, int oflags)
   if (oflags & O_SYNC) strcat (buf, "|O_SYNC");
 #endif
   if (oflags & O_TRUNC) strcat (buf, "|O_TRUNC");
+  return true;
 }
 
 /* Reset user and group IDs to be those of the real user.
@@ -588,7 +589,13 @@ rmt_open (char const *file_name, int oflags, int bias,
     size_t remote_file_len = strlen (remote_file);
     char *command_buffer = xmalloc (remote_file_len + 1000);
     sprintf (command_buffer, "O%s\n", remote_file);
-    encode_oflags (command_buffer + remote_file_len + 2, oflags);
+    if (!encode_oflags (command_buffer + remote_file_len + 2, oflags))
+      {
+	free (command_buffer);
+	free (file_name_copy);
+	_rmt_shutdown (remote_pipe_number, EINVAL);
+	return -1;
+      }
     strcat (command_buffer, "\n");
     if (do_command (remote_pipe_number, command_buffer) == -1
 	|| get_status (remote_pipe_number, INTMAX_MAX) < 0)
@@ -697,7 +704,7 @@ rmt_lseek (int handle, off_t offset, int whence)
     case SEEK_SET: whence = 0; break;
     case SEEK_CUR: whence = 1; break;
     case SEEK_END: whence = 2; break;
-    default: abort ();
+    default: errno = EINVAL; return -1;
     }
 
   sprintf (command_buffer, "L%d\n%jd\n", whence, off);
