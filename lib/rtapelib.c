@@ -142,6 +142,38 @@ do_command (int handle, const char *buffer)
   return -1;
 }
 
+/* Return the integer represented by the array of bytes at the start of S.
+   The bytes use the usual unsigned ASCII decimal representation,
+   and are terminated by a non ASCII digit.  Return -1 if S does not
+   start with a decimal string, or if the integer exceeds SMAX.  */
+static intmax_t
+dectointmax (char const *s, intmax_t smax)
+{
+  /* Do not use strtoimax, as it allows leading whitespace, '-' and
+     '+', and requires the input to be null-terminated.  */
+  if ('0' <= *s && *s <= '9')
+    {
+      bool overflow = false;
+      intmax_t result = *s - '0';
+      while ('0' <= *++s && *s <= '9')
+	{
+	  overflow |= ckd_mul (&result, result, 10);
+	  overflow |= ckd_add (&result, result, *s - '0');
+	}
+      overflow |= smax < result;
+      if (!overflow)
+	{
+	  assume (0 <= result);
+	  return result;
+	}
+    }
+  return -1;
+}
+
+/* Get from HANDLE a response string into COMMAND_BUFFER, terminated by '\n'.
+   If the response is a successful command, starting with 'A',
+   return the address of the byte following the 'A'.
+   Otherwise, set errno and return a null pointer.  */
 static char *
 get_status_string (int handle, char command_buffer[COMMAND_BUFFER_SIZE])
 {
@@ -158,10 +190,7 @@ get_status_string (int handle, char command_buffer[COMMAND_BUFFER_SIZE])
 	  return nullptr;
 	}
       if (*cursor == '\n')
-	{
-	  *cursor = '\0';
-	  break;
-	}
+	break;
     }
 
   /* Check the return status.  */
@@ -190,7 +219,7 @@ get_status_string (int handle, char command_buffer[COMMAND_BUFFER_SIZE])
       /* This assumes remote errno values are the same as local,
 	 which is wrong in general, but does work in common cases
 	 and perhaps is the best we can do here.  */
-      int err = atoi (cursor + 1);
+      int err = dectointmax (cursor + 1, INT_MAX);
       errno = err <= 0 ? EIO : err;
 
       if (*cursor == 'F')
@@ -212,38 +241,22 @@ get_status_string (int handle, char command_buffer[COMMAND_BUFFER_SIZE])
   return cursor + 1;
 }
 
-/* Read and return the status from remote tape connection HANDLE.  If
+/* Read and return the status from remote tape connection HANDLE.
+   The status must be in the range 0..STATUS_MAX.  If
    an error occurred, return -1 and set errno.  */
-static long int
-get_status (int handle)
+static intmax_t
+get_status (int handle, intmax_t status_max)
 {
   char command_buffer[COMMAND_BUFFER_SIZE];
   const char *status = get_status_string (handle, command_buffer);
   if (status)
     {
-      long int result = atol (status);
+      intmax_t result = dectointmax (status, status_max);
       if (0 <= result)
 	return result;
       errno = EIO;
     }
   return -1;
-}
-
-static off_t
-get_status_off (int handle)
-{
-  char command_buffer[COMMAND_BUFFER_SIZE];
-  const char *status = get_status_string (handle, command_buffer);
-
-  if (! status)
-    return -1;
-
-  /* Parse status, checking for overflow.  */
-  char *status_end;
-  off_t c;
-  errno = 0;
-  intmax_t count = strtoimax (status, &status_end, 10);
-  return errno || status_end == status || ckd_add (&c, count, 0) ? -1 : c;
 }
 
 #if WITH_REXEC
@@ -568,7 +581,7 @@ rmt_open (char const *file_name, int oflags, int bias,
     encode_oflags (command_buffer + remote_file_len + 2, oflags);
     strcat (command_buffer, "\n");
     if (do_command (remote_pipe_number, command_buffer) == -1
-	|| get_status (remote_pipe_number) == -1)
+	|| get_status (remote_pipe_number, INTMAX_MAX) < 0)
       {
 	free (command_buffer);
 	free (file_name_copy);
@@ -592,7 +605,7 @@ rmt_close (int handle)
   if (do_command (handle, "C\n") == -1)
     return -1;
 
-  status = get_status (handle);
+  status = get_status (handle, 0);
   _rmt_shutdown (handle, errno);
   return status;
 }
@@ -608,8 +621,8 @@ rmt_read (int handle, char *buffer, idx_t length)
   if (done < 0)
     return done;
 
-  long int status = get_status (handle);
-  if (! (0 <= status && status <= length))
+  ptrdiff_t status = get_status (handle, length);
+  if (status < 0)
     {
       _rmt_shutdown (handle, EIO);
       return -1;
@@ -647,7 +660,7 @@ rmt_write (int handle, char *buffer, idx_t length)
   signal (SIGPIPE, pipe_handler);
   if (written == length)
     {
-      long int r = get_status (handle);
+      ptrdiff_t r = get_status (handle, length);
       if (r < 0)
 	return 0;
       if (r == length)
@@ -682,7 +695,7 @@ rmt_lseek (int handle, off_t offset, int whence)
   if (do_command (handle, command_buffer) == -1)
     return -1;
 
-  return get_status_off (handle);
+  return get_status (handle, TYPE_MAXIMUM (off_t));
 }
 
 /* Perform a raw tape operation on remote tape connection HANDLE.
@@ -711,7 +724,7 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	if (do_command (handle, command_buffer) == -1)
 	  return -1;
 
-	return get_status (handle);
+	return get_status (handle, INT_MAX);
       }
 #endif /* MTIOCTOP */
 
@@ -719,7 +732,6 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
     case MTIOCGET:
       {
 	struct mtget *mtget = argument;
-	long int status;
 
 	/* Grab the status and read it directly into the structure.  This
 	   assumes that the status buffer is not padded and that 2 shorts
@@ -727,10 +739,12 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	   whole struct is contiguous.  NOTE - this is probably NOT a good
 	   assumption.  */
 
-	if (do_command (handle, "S") == -1
-	    || (status = get_status (handle), status == -1))
-	  return -1;
-
+	int done = do_command (handle, "S");
+	if (done < 0)
+	  return done;
+	ptrdiff_t status = get_status (handle, sizeof *mtget);
+	if (status < 0)
+	  return status;
 	if (status != sizeof *mtget)
 	  {
 	    _rmt_shutdown (handle, EIO);
