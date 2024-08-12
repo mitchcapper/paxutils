@@ -130,16 +130,14 @@ rmt_error (int code)
 
 
 static char *record_buffer_ptr;
-static size_t record_buffer_size;
+static idx_t record_buffer_size;
 
 static void
 prepare_record_buffer (size_t size)
 {
   if (size > record_buffer_size)
-    {
-      record_buffer_ptr = xrealloc (record_buffer_ptr, size);
-      record_buffer_size = size;
-    }
+    record_buffer_ptr = xpalloc (record_buffer_ptr, &record_buffer_size,
+				 size - record_buffer_size, -1, 1);
 }
 
 
