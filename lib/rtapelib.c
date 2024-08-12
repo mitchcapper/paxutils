@@ -143,18 +143,16 @@ do_command (int handle, const char *buffer)
 }
 
 static char *
-get_status_string (int handle, char *command_buffer)
+get_status_string (int handle, char command_buffer[COMMAND_BUFFER_SIZE])
 {
   char *cursor;
-  int counter;
 
   /* Read the reply command line.  */
 
-  for (counter = 0, cursor = command_buffer;
-       counter < COMMAND_BUFFER_SIZE;
-       counter++, cursor++)
+  for (cursor = command_buffer; ; cursor++)
     {
-      if (safe_read (read_side (handle), cursor, 1) != 1)
+      if (cursor == command_buffer + COMMAND_BUFFER_SIZE
+	  || safe_read (read_side (handle), cursor, 1) != 1)
 	{
 	  _rmt_shutdown (handle, EIO);
 	  return nullptr;
@@ -166,17 +164,10 @@ get_status_string (int handle, char *command_buffer)
 	}
     }
 
-  if (counter == COMMAND_BUFFER_SIZE)
-    {
-      _rmt_shutdown (handle, EIO);
-      return nullptr;
-    }
-
   /* Check the return status.  */
 
-  for (cursor = command_buffer; *cursor; cursor++)
-    if (*cursor != ' ')
-      break;
+  for (cursor = command_buffer; *cursor == ' '; cursor++)
+    continue;
 
   if (*cursor == 'E' || *cursor == 'F')
     {
@@ -186,11 +177,21 @@ get_status_string (int handle, char *command_buffer)
 	 coming from the remote end.  Translate them, too...  */
 
       char character;
-      while (safe_read (read_side (handle), &character, 1) == 1)
-	if (character == '\n')
-	  break;
+      do
+	{
+	  if (safe_read (read_side (handle), &character, 1) != 1)
+	    {
+	      _rmt_shutdown (handle, EIO);
+	      return nullptr;
+	    }
+	}
+      while (character == '\n');
 
-      errno = atoi (cursor + 1);
+      /* This assumes remote errno values are the same as local,
+	 which is wrong in general, but does work in common cases
+	 and perhaps is the best we can do here.  */
+      int err = atoi (cursor + 1);
+      errno = err <= 0 ? EIO : err;
 
       if (*cursor == 'F')
 	_rmt_shutdown (handle, errno);
