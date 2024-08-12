@@ -273,10 +273,22 @@ get_status (int handle, intmax_t status_max)
 static int
 _rmt_rexec (char *host, char const *user, char const *rmt_command)
 {
+  struct servent *rexecserv = getservbyname ("exec", "tcp");
+  if (!rexecserv)
+    error (EXIT_ON_EXEC_ERROR, 0, _("exec/tcp: Service not available"));
+
   int saved_stdin = dup (STDIN_FILENO);
+  if ((saved_stdin < 0 && errno != EBADF)
+      || (saved_stdin == STDOUT_FILENO
+	  && ((saved_stdin = dup (STDOUT_FILENO)) < 0
+	      || close (STDOUT_FILENO) < 0)))
+    error (EXIT_ON_EXEC_ERROR, errno, _("stdin"));
   int saved_stdout = dup (STDOUT_FILENO);
-  struct servent *rexecserv;
-  int result;
+  if ((saved_stdout < 0 && errno != EBADF)
+      || (saved_stdout == STDIN_FILENO
+	  && ((saved_stdout = dup (STDIN_FILENO)) < 0
+	      || close (STDIN_FILENO) < 0)))
+    error (EXIT_ON_EXEC_ERROR, errno, _("stdout"));
 
   /* When using cpio -o < filename, stdin is no longer the tty.  But the
      rexec subroutine reads the login and the passwd on stdin, to allow
@@ -284,22 +296,20 @@ _rmt_rexec (char *host, char const *user, char const *rmt_command)
      /dev/tty before the rexec and give them back their original value
      after.  */
 
-  if (! freopen ("/dev/tty", "r", stdin))
-    freopen ("/dev/null", "r", stdin);
-  if (! freopen ("/dev/tty", "w", stdout))
-    freopen ("/dev/null", "w", stdout);
+  if ((0 <= saved_stdin && close (STDIN_FILENO) < 0)
+      || (open ("/dev/tty", O_RDONLY) < 0 && open ("/dev/null", O_RDONLY) < 0)
+      || (0 <= saved_stdout && close (STDOUT_FILENO) < 0)
+      || (open ("/dev/tty", O_WRONLY) < 0 && open ("/dev/null", O_WRONLY) < 0))
+    error (EXIT_ON_EXEC_ERROR, errno, "/dev/null");
 
-  if (rexecserv = getservbyname ("exec", "tcp"), !rexecserv)
-    error (EXIT_ON_EXEC_ERROR, 0, _("exec/tcp: Service not available"));
-
-  result = rexec (&host, rexecserv->s_port,
-		  user, nullptr, rmt_command, nullptr);
-  if (fclose (stdin) == EOF)
+  int result = rexec (&host, rexecserv->s_port,
+		      user, nullptr, rmt_command, nullptr);
+  if (0 <= saved_stdin
+      && (dup2 (saved_stdin, STDIN_FILENO) < 0 || close (saved_stdin) < 0))
     error (0, errno, _("stdin"));
-  fdopen (saved_stdin, "r");
-  if (fclose (stdout) == EOF)
+  if (0 <= saved_stdout
+      && (dup2 (saved_stdout, STDOUT_FILENO) < 0 || close (saved_stdout) < 0))
     error (0, errno, _("stdout"));
-  fdopen (saved_stdout, "w");
 
   return result;
 }
@@ -470,7 +480,7 @@ rmt_open (char const *file_name, int oflags, int bias,
 
   /* Execute the remote command using rexec.  */
 
-  int fd = _rmt_rexec (remote_host, remote_user);
+  int fd = _rmt_rexec (remote_host, remote_user, rmt_command);
   if (fd < 0)
     {
       free (file_name_copy);
