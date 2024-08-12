@@ -121,7 +121,7 @@ static char *record_buffer_ptr;
 static idx_t record_buffer_size;
 
 static void
-prepare_record_buffer (size_t size)
+prepare_record_buffer (idx_t size)
 {
   if (size > record_buffer_size)
     record_buffer_ptr = xpalloc (record_buffer_ptr, &record_buffer_size,
@@ -135,7 +135,7 @@ static int device_fd = -1;
 struct rmt_kw
 {
   char const *name;
-  size_t len;
+  idx_t len;
   int value;
 };
 
@@ -145,11 +145,11 @@ static bool
 xlat_kw (const char *s, const char *pfx,
 	 struct rmt_kw const *kw, int *valp, const char **endp)
 {
-  size_t slen = strlen (s);
+  idx_t slen = strlen (s);
 
   if (pfx)
     {
-      size_t pfxlen = strlen (pfx);
+      idx_t pfxlen = strlen (pfx);
       if (slen > pfxlen && memcmp (s, pfx, pfxlen) == 0)
 	{
 	  s += pfxlen;
