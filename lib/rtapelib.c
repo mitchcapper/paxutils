@@ -377,11 +377,11 @@ sys_reset_uid_gid (void)
 
   if (!pw)
     return "getpwuid";
-  if (initgroups (pw->pw_name, gid) != 0 && errno != EPERM)
+  if (initgroups (pw->pw_name, gid) < 0 && errno != EPERM)
     return "initgroups";
-  if (gid != getegid () && setgid (gid) != 0 && errno != EPERM)
+  if (gid != getegid () && setgid (gid) < 0 && errno != EPERM)
     return "setgid";
-  if (uid != geteuid () && setuid (uid) != 0 && errno != EPERM)
+  if (uid != geteuid () && setuid (uid) < 0 && errno != EPERM)
     return "setuid";
 #endif
 
@@ -529,7 +529,7 @@ rmt_open (char const *file_name, int oflags, int bias,
       }
 
     status = fork ();
-    if (status == -1)
+    if (status < 0)
       {
 	int e = errno;
 	close (from_remote[remote_pipe_number][PREAD]);
@@ -547,12 +547,12 @@ rmt_open (char const *file_name, int oflags, int bias,
 
 	if (dup2 (to_remote[remote_pipe_number][PREAD], STDIN_FILENO) < 0
 	    || (to_remote[remote_pipe_number][PREAD] != STDIN_FILENO
-		&& close (to_remote[remote_pipe_number][PREAD]) != 0)
+		&& close (to_remote[remote_pipe_number][PREAD]) < 0)
 	    || (to_remote[remote_pipe_number][PWRITE] != STDIN_FILENO
-		&& close (to_remote[remote_pipe_number][PWRITE]) != 0)
+		&& close (to_remote[remote_pipe_number][PWRITE]) < 0)
 	    || dup2 (from_remote[remote_pipe_number][PWRITE], STDOUT_FILENO) < 0
-	    || close (from_remote[remote_pipe_number][PREAD]) != 0
-	    || close (from_remote[remote_pipe_number][PWRITE]) != 0)
+	    || close (from_remote[remote_pipe_number][PREAD]) < 0
+	    || close (from_remote[remote_pipe_number][PWRITE]) < 0)
 	  error (EXIT_ON_EXEC_ERROR, errno,
 		 _("Cannot redirect files for remote shell"));
 
@@ -597,15 +597,14 @@ rmt_open (char const *file_name, int oflags, int bias,
 	return -1;
       }
     strcat (command_buffer, "\n");
-    if (do_command (remote_pipe_number, command_buffer) == -1
-	|| get_status (remote_pipe_number, INTMAX_MAX) < 0)
+    int done = do_command (remote_pipe_number, command_buffer);
+    free (command_buffer);
+    if (done < 0 || get_status (remote_pipe_number, INTMAX_MAX) < 0)
       {
-	free (command_buffer);
 	free (file_name_copy);
 	_rmt_shutdown (remote_pipe_number, errno);
 	return -1;
       }
-    free (command_buffer);
   }
 
   free (file_name_copy);
@@ -617,12 +616,11 @@ rmt_open (char const *file_name, int oflags, int bias,
 int
 rmt_close (int handle)
 {
-  long int status;
+  int done = do_command (handle, "C\n");
+  if (done < 0)
+    return done;
 
-  if (do_command (handle, "C\n") == -1)
-    return -1;
-
-  status = get_status (handle, 0);
+  int status = get_status (handle, 0);
   _rmt_shutdown (handle, errno);
   return status;
 }
@@ -709,8 +707,9 @@ rmt_lseek (int handle, off_t offset, int whence)
 
   sprintf (command_buffer, "L%d\n%jd\n", whence, off);
 
-  if (do_command (handle, command_buffer) == -1)
-    return -1;
+  int done = do_command (handle, command_buffer);
+  if (done < 0)
+    return done;
 
   return get_status (handle, TYPE_MAXIMUM (off_t));
 }
@@ -738,8 +737,9 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 
 	intmax_t count = mtop->mt_count;
 	sprintf (command_buffer, "I%d\n%jd\n", mtop->mt_op, count);
-	if (do_command (handle, command_buffer) == -1)
-	  return -1;
+	int done = do_command (handle, command_buffer);
+	if (done < 0)
+	  return done;
 
 	return get_status (handle, INT_MAX);
       }
