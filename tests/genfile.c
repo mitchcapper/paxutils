@@ -360,8 +360,8 @@ parse_opt (int key, char *arg, struct argp_state *state)
 	static char const opt[] = "--checkpoint=";
 	idx_t arglen = strlen (arg);
 	checkpoint_granularity = ximalloc (sizeof opt + arglen);
-	memcpy (checkpoint_granularity, opt, sizeof opt - 1);
-	memcpy (checkpoint_granularity + sizeof opt - 1, arg, arglen + 1);
+	char *p = mempcpy (checkpoint_granularity, opt, sizeof opt - 1);
+	memcpy (p, arg, arglen + 1);
       }
       break;
 

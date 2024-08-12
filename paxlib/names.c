@@ -45,17 +45,8 @@ hash_string_insert_prefix (Hash_table **table, char const *string, size_t len,
 			   const char **return_prefix)
 {
   Hash_table *t = *table;
-  char *s;
+  char *s = ximemdup0 (string, len);
   char *e;
-
-  if (len)
-    {
-      s = xmalloc (len + 1);
-      memcpy (s, string, len);
-      s[len] = 0;
-    }
-  else
-    s = xstrdup (string);
 
   if (! ((t
 	  || (*table = t = hash_initialize (0, nullptr, hash_string_hasher,

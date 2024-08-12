@@ -326,43 +326,44 @@ _rmt_rexec (char *host, char const *user, char const *rmt_command)
 /* Place into BUF a string representing OFLAGS, which must be suitable
    as argument 2 of 'open'.  BUF must be large enough to hold the
    result.  This function should generate a string that decode_oflags
-   can parse.  Return true if successful, false if OFLAGS is invalid.  */
-static bool
+   can parse.  Return a pointer to the trailing null byte of the string
+   if successful, a null pointer otherwise.  */
+static char *
 encode_oflags (char *buf, int oflags)
 {
-  sprintf (buf, "%d ", oflags);
+  char *p = buf + sprintf (buf, "%d ", oflags);
 
   switch (oflags & O_ACCMODE)
     {
-    case O_RDONLY: strcat (buf, "O_RDONLY"); break;
-    case O_RDWR: strcat (buf, "O_RDWR"); break;
-    case O_WRONLY: strcat (buf, "O_WRONLY"); break;
-    default: return false;
+    case O_RDONLY: p = stpcpy (p, "O_RDONLY"); break;
+    case O_RDWR: p = stpcpy (p, "O_RDWR"); break;
+    case O_WRONLY: p = stpcpy (p, "O_WRONLY"); break;
+    default: return nullptr;
     }
 
 #ifdef O_APPEND
-  if (oflags & O_APPEND) strcat (buf, "|O_APPEND");
+  if (oflags & O_APPEND) p = stpcpy (p, "|O_APPEND");
 #endif
-  if (oflags & O_CREAT) strcat (buf, "|O_CREAT");
+  if (oflags & O_CREAT) p = stpcpy (p, "|O_CREAT");
 #ifdef O_DSYNC
-  if (oflags & O_DSYNC) strcat (buf, "|O_DSYNC");
+  if (oflags & O_DSYNC) p = stpcpy (p, "|O_DSYNC");
 #endif
-  if (oflags & O_EXCL) strcat (buf, "|O_EXCL");
+  if (oflags & O_EXCL) p = stpcpy (p, "|O_EXCL");
 #ifdef O_LARGEFILE
-  if (oflags & O_LARGEFILE) strcat (buf, "|O_LARGEFILE");
+  if (oflags & O_LARGEFILE) p = stpcpy (p, "|O_LARGEFILE");
 #endif
 #ifdef O_NOCTTY
-  if (oflags & O_NOCTTY) strcat (buf, "|O_NOCTTY");
+  if (oflags & O_NOCTTY) p = stpcpy (p, "|O_NOCTTY");
 #endif
-  if (oflags & O_NONBLOCK) strcat (buf, "|O_NONBLOCK");
+  if (oflags & O_NONBLOCK) p = stpcpy (p, "|O_NONBLOCK");
 #ifdef O_RSYNC
-  if (oflags & O_RSYNC) strcat (buf, "|O_RSYNC");
+  if (oflags & O_RSYNC) p = stpcpy (p, "|O_RSYNC");
 #endif
 #ifdef O_SYNC
-  if (oflags & O_SYNC) strcat (buf, "|O_SYNC");
+  if (oflags & O_SYNC) p = stpcpy (p, "|O_SYNC");
 #endif
-  if (oflags & O_TRUNC) strcat (buf, "|O_TRUNC");
-  return true;
+  if (oflags & O_TRUNC) p = stpcpy (p, "|O_TRUNC");
+  return p;
 }
 
 /* Reset user and group IDs to be those of the real user.
@@ -588,17 +589,19 @@ rmt_open (char const *file_name, int oflags, int bias,
   {
     idx_t remote_file_len = strlen (remote_file);
     char *command_buffer = ximalloc (remote_file_len + 1000);
-    *command_buffer = 'O';
-    memcpy (command_buffer + 1, remote_file, remote_file_len);
-    command_buffer[remote_file_len + 1] = '\n';
-    if (!encode_oflags (command_buffer + remote_file_len + 2, oflags))
+    char *p = command_buffer;
+    *p++ = 'O';
+    p = mempcpy (p, remote_file, remote_file_len);
+    *p++ = '\n';
+    p = encode_oflags (p, oflags);
+    if (!p)
       {
 	free (command_buffer);
 	free (file_name_copy);
 	_rmt_shutdown (remote_pipe_number, EINVAL);
 	return -1;
       }
-    strcat (command_buffer, "\n");
+    strcpy (p, "\n");
     int done = do_command (remote_pipe_number, command_buffer);
     free (command_buffer);
     if (done < 0 || get_status (remote_pipe_number, INTMAX_MAX) < 0)

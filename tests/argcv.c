@@ -262,10 +262,10 @@ escape_copy (char *dst, const char *src)
 	    *dst++ = c;
 	  else
 	    {
-	      char tmp[4];
-	      snprintf (tmp, sizeof tmp, "%03o", *(unsigned char*)src);
-	      memcpy (dst, tmp, 3);
-	      dst += 3;
+	      unsigned char uc = *src;
+	      *dst++ = '0' + ((uc >> 6) & 7);
+	      *dst++ = '0' + ((uc >> 3) & 7);
+	      *dst++ = '0' + ((uc >> 0) & 7);
 	    }
 	}
     }
