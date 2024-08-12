@@ -120,15 +120,14 @@ _rmt_shutdown (int handle, int errno_value)
   errno = errno_value;
 }
 
-/* Attempt to perform the remote tape command specified in BUFFER on
-   remote tape connection HANDLE.  Return 0 if successful, -1 on
-   error.  */
+/* Using remote tape connection HANDLE, do the remote tape command
+   specified in BUFFER with LENGTH bytes.
+   Return 0 if successful, -1 on error.  */
 static int
-do_command (int handle, const char *buffer)
+do_command (int handle, const char *buffer, idx_t length)
 {
   /* Save the current pipe handler and try to make the request.  */
 
-  idx_t length = strlen (buffer);
   void (*pipe_handler) (int) = signal (SIGPIPE, SIG_IGN);
   idx_t written = full_write (write_side (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
@@ -601,8 +600,9 @@ rmt_open (char const *file_name, int oflags, int bias,
 	_rmt_shutdown (remote_pipe_number, EINVAL);
 	return -1;
       }
-    strcpy (p, "\n");
-    int done = do_command (remote_pipe_number, command_buffer);
+    *p++ = '\n';
+    int done = do_command (remote_pipe_number,
+			   command_buffer, p - command_buffer);
     free (command_buffer);
     if (done < 0 || get_status (remote_pipe_number, INTMAX_MAX) < 0)
       {
@@ -621,7 +621,7 @@ rmt_open (char const *file_name, int oflags, int bias,
 int
 rmt_close (int handle)
 {
-  int done = do_command (handle, "C\n");
+  int done = do_command (handle, "C\n", 2);
   if (done < 0)
     return done;
 
@@ -636,8 +636,8 @@ ptrdiff_t
 rmt_read (int handle, char *buffer, idx_t length)
 {
   char command_buffer[sizeof "R\n" + INT_STRLEN_BOUND (idx_t)];
-  sprintf (command_buffer, "R%jd\n", length);
-  int done = do_command (handle, command_buffer);
+  int done = do_command (handle, command_buffer,
+			 sprintf (command_buffer, "R%jd\n", length));
   if (done < 0)
     return done;
 
@@ -670,9 +670,8 @@ rmt_write (int handle, char *buffer, idx_t length)
 {
   char command_buffer[sizeof "W\n" + INT_STRLEN_BOUND (idx_t)];
   void (*pipe_handler) (int);
-
-  sprintf (command_buffer, "W%jd\n", length);
-  if (do_command (handle, command_buffer) < 0)
+  int buflen = sprintf (command_buffer, "W%jd\n", length);
+  if (do_command (handle, command_buffer, buflen) < 0)
     return 0;
 
   pipe_handler = signal (SIGPIPE, SIG_IGN);
@@ -710,9 +709,8 @@ rmt_lseek (int handle, off_t offset, int whence)
     default: errno = EINVAL; return -1;
     }
 
-  sprintf (command_buffer, "L%d\n%jd\n", whence, off);
-
-  int done = do_command (handle, command_buffer);
+  int done = do_command (handle, command_buffer,
+			 sprintf (command_buffer, "L%d\n%jd\n", whence, off));
   if (done < 0)
     return done;
 
@@ -741,8 +739,9 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	/* MTIOCTOP is the easy one.  Nothing is transferred in binary.  */
 
 	intmax_t count = mtop->mt_count;
-	sprintf (command_buffer, "I%d\n%jd\n", mtop->mt_op, count);
-	int done = do_command (handle, command_buffer);
+	int done = do_command (handle, command_buffer,
+			       sprintf (command_buffer, "I%d\n%jd\n",
+					mtop->mt_op, count));
 	if (done < 0)
 	  return done;
 
@@ -761,7 +760,7 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	   whole struct is contiguous.  NOTE - this is probably NOT a good
 	   assumption.  */
 
-	int done = do_command (handle, "S\n");
+	int done = do_command (handle, "S\n", 2);
 	if (done < 0)
 	  return done;
 	ptrdiff_t status = get_status (handle, sizeof *mtget);
