@@ -761,7 +761,7 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 	   whole struct is contiguous.  NOTE - this is probably NOT a good
 	   assumption.  */
 
-	int done = do_command (handle, "S");
+	int done = do_command (handle, "S\n");
 	if (done < 0)
 	  return done;
 	ptrdiff_t status = get_status (handle, sizeof *mtget);
