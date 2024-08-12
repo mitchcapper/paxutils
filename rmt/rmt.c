@@ -65,19 +65,6 @@ static FILE *dbgout;
 
 
 
-static void
-trimnl (char *str)
-{
-  if (str)
-    {
-      size_t len = strlen (str);
-      if (len > 1 && str[len-1] == '\n')
-	str[len-1] = 0;
-    }
-}
-
-
-
 static char *input_buf_ptr;
 static size_t input_buf_size;
 
@@ -87,8 +74,9 @@ rmt_read (void)
   ssize_t rc = getline (&input_buf_ptr, &input_buf_size, stdin);
   if (rc > 0)
     {
+      if (input_buf_ptr[rc - 1] == '\n')
+	input_buf_ptr[rc - 1] = '\0';
       DEBUG1 (10, "C: %s", input_buf_ptr);
-      trimnl (input_buf_ptr);
       return input_buf_ptr;
     }
   DEBUG (10, "reached EOF");
