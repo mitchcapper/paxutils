@@ -49,28 +49,36 @@
 #endif
 
 /* Exit status if exec errors.  */
-#define EXIT_ON_EXEC_ERROR 128
+enum { EXIT_ON_EXEC_ERROR = 128 };
 
 /* FIXME: Size of buffers for reading and writing commands to rmt.  */
-#define COMMAND_BUFFER_SIZE 64
+enum { COMMAND_BUFFER_SIZE = 64 };
 
 /* FIXME: Maximum number of simultaneous remote tape connections.  */
-#define MAXUNIT	4
+enum { MAXUNIT = 4 };
 
-#define	PREAD 0			/* read  file descriptor from pipe() */
-#define	PWRITE 1		/* write file descriptor from pipe() */
-
-/* Return the parent's read side of remote tape connection Fd.  */
-#define READ_SIDE(Fd) (from_remote[Fd][PREAD])
-
-/* Return the parent's write side of remote tape connection Fd.  */
-#define WRITE_SIDE(Fd) (to_remote[Fd][PWRITE])
+/* Read and write file descriptors from pipe () calls.  */
+enum { PREAD, PWRITE };		/* read  file descriptor from pipe() */
 
 /* The pipes for receiving data from remote tape drives.  */
 static int from_remote[MAXUNIT][2] = {{-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
 
 /* The pipes for sending data to remote tape drives.  */
 static int to_remote[MAXUNIT][2] = {{-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
+
+/* The parent's read side of remote tape connection Fd.  */
+static int
+read_side (int handle)
+{
+  return from_remote[handle][PREAD];
+}
+
+/* The parent's write side of remote tape connection Fd.  */
+static int
+write_side (int handle)
+{
+  return to_remote[handle][PWRITE];
+}
 
 /* ../paxlib/rtape.c #defines PAXLIB_RTAPE.  */
 #ifdef PAXLIB_RTAPE
@@ -89,8 +97,8 @@ char const *rmt_dev_name__;
 bool force_local_option;
 
 # define _rmt_rexec (host, user, rmt_command) _rmt_rexec (host, user)
-# define rmt_open(file_name, open_mode, bias, remote_shell, rmt_command) \
-    rmt_open__ (file_name, open_mode, bias, remote_shell)
+# define rmt_open(file_name, oflags, bias, remote_shell, rmt_command) \
+    rmt_open__ (file_name, oflags, bias, remote_shell)
 # define rmt_close(handle) rmt_close__ (handle)
 # define rmt_read(handle, buffer, length) rmt_read__ (handle, buffer, length)
 # define rmt_write(handle, buffer, length) rmt_write__ (handle, buffer, length)
@@ -105,10 +113,10 @@ bool force_local_option;
 static void
 _rmt_shutdown (int handle, int errno_value)
 {
-  close (READ_SIDE (handle));
-  close (WRITE_SIDE (handle));
-  READ_SIDE (handle) = -1;
-  WRITE_SIDE (handle) = -1;
+  close (read_side (handle));
+  close (write_side (handle));
+  from_remote[handle][PREAD] = -1;
+  to_remote[handle][PWRITE] = -1;
   errno = errno_value;
 }
 
@@ -122,7 +130,7 @@ do_command (int handle, const char *buffer)
 
   idx_t length = strlen (buffer);
   void (*pipe_handler) (int) = signal (SIGPIPE, SIG_IGN);
-  idx_t written = full_write (WRITE_SIDE (handle), buffer, length);
+  idx_t written = full_write (write_side (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
 
   if (written == length)
@@ -146,7 +154,7 @@ get_status_string (int handle, char *command_buffer)
        counter < COMMAND_BUFFER_SIZE;
        counter++, cursor++)
     {
-      if (safe_read (READ_SIDE (handle), cursor, 1) != 1)
+      if (safe_read (read_side (handle), cursor, 1) != 1)
 	{
 	  _rmt_shutdown (handle, EIO);
 	  return nullptr;
@@ -177,13 +185,10 @@ get_status_string (int handle, char *command_buffer)
       /* FIXME: there is better to do than merely ignoring error messages
 	 coming from the remote end.  Translate them, too...  */
 
-      {
-	char character;
-
-	while (safe_read (READ_SIDE (handle), &character, 1) == 1)
-	  if (character == '\n')
-	    break;
-      }
+      char character;
+      while (safe_read (read_side (handle), &character, 1) == 1)
+	if (character == '\n')
+	  break;
 
       errno = atoi (cursor + 1);
 
@@ -201,7 +206,7 @@ get_status_string (int handle, char *command_buffer)
       return nullptr;
     }
 
-  /* Got an `A' (success) response.  */
+  /* Got an 'A' (success) response.  */
 
   return cursor + 1;
 }
@@ -294,16 +299,16 @@ _rmt_rexec (char *host, char const *user, char const *rmt_command)
 
 #endif /* WITH_REXEC */
 
-/* Place into BUF a string representing OFLAG, which must be suitable
-   as argument 2 of `open'.  BUF must be large enough to hold the
-   result.  This function should generate a string that decode_oflag
+/* Place into BUF a string representing OFLAGS, which must be suitable
+   as argument 2 of 'open'.  BUF must be large enough to hold the
+   result.  This function should generate a string that decode_oflags
    can parse.  */
 static void
-encode_oflag (char *buf, int oflag)
+encode_oflags (char *buf, int oflags)
 {
-  sprintf (buf, "%d ", oflag);
+  sprintf (buf, "%d ", oflags);
 
-  switch (oflag & O_ACCMODE)
+  switch (oflags & O_ACCMODE)
     {
     case O_RDONLY: strcat (buf, "O_RDONLY"); break;
     case O_RDWR: strcat (buf, "O_RDWR"); break;
@@ -312,27 +317,27 @@ encode_oflag (char *buf, int oflag)
     }
 
 #ifdef O_APPEND
-  if (oflag & O_APPEND) strcat (buf, "|O_APPEND");
+  if (oflags & O_APPEND) strcat (buf, "|O_APPEND");
 #endif
-  if (oflag & O_CREAT) strcat (buf, "|O_CREAT");
+  if (oflags & O_CREAT) strcat (buf, "|O_CREAT");
 #ifdef O_DSYNC
-  if (oflag & O_DSYNC) strcat (buf, "|O_DSYNC");
+  if (oflags & O_DSYNC) strcat (buf, "|O_DSYNC");
 #endif
-  if (oflag & O_EXCL) strcat (buf, "|O_EXCL");
+  if (oflags & O_EXCL) strcat (buf, "|O_EXCL");
 #ifdef O_LARGEFILE
-  if (oflag & O_LARGEFILE) strcat (buf, "|O_LARGEFILE");
+  if (oflags & O_LARGEFILE) strcat (buf, "|O_LARGEFILE");
 #endif
 #ifdef O_NOCTTY
-  if (oflag & O_NOCTTY) strcat (buf, "|O_NOCTTY");
+  if (oflags & O_NOCTTY) strcat (buf, "|O_NOCTTY");
 #endif
-  if (oflag & O_NONBLOCK) strcat (buf, "|O_NONBLOCK");
+  if (oflags & O_NONBLOCK) strcat (buf, "|O_NONBLOCK");
 #ifdef O_RSYNC
-  if (oflag & O_RSYNC) strcat (buf, "|O_RSYNC");
+  if (oflags & O_RSYNC) strcat (buf, "|O_RSYNC");
 #endif
 #ifdef O_SYNC
-  if (oflag & O_SYNC) strcat (buf, "|O_SYNC");
+  if (oflags & O_SYNC) strcat (buf, "|O_SYNC");
 #endif
-  if (oflag & O_TRUNC) strcat (buf, "|O_TRUNC");
+  if (oflags & O_TRUNC) strcat (buf, "|O_TRUNC");
 }
 
 /* Reset user and group IDs to be those of the real user.
@@ -359,12 +364,12 @@ sys_reset_uid_gid (void)
 }
 
 /* Open a file (a magnetic tape device?) on the system specified in
-   FILE_NAME, as the given user. FILE_NAME has the form `[USER@]HOST:FILE'.
-   OPEN_MODE is O_RDONLY, O_WRONLY, etc.  If successful, return the
+   FILE_NAME, as the given user. FILE_NAME has the form '[USER@]HOST:FILE'.
+   OFLAGS is O_RDONLY, O_WRONLY, etc.  If successful, return the
    remote pipe number plus BIAS.  REMOTE_SHELL may be overridden.  On
    error, return -1.  */
 int
-rmt_open (char const *file_name, int open_mode, int bias,
+rmt_open (char const *file_name, int oflags, int bias,
 	  char const *remote_shell, char const *rmt_command)
 {
   int remote_pipe_number;	/* pseudo, biased file descriptor */
@@ -378,8 +383,8 @@ rmt_open (char const *file_name, int open_mode, int bias,
   for (remote_pipe_number = 0;
        remote_pipe_number < MAXUNIT;
        remote_pipe_number++)
-    if (READ_SIDE (remote_pipe_number) == -1
-	&& WRITE_SIDE (remote_pipe_number) == -1)
+    if (read_side (remote_pipe_number) < 0
+	&& write_side (remote_pipe_number) < 0)
       break;
 
   if (remote_pipe_number == MAXUNIT)
@@ -451,14 +456,15 @@ rmt_open (char const *file_name, int open_mode, int bias,
 
   /* Execute the remote command using rexec.  */
 
-  READ_SIDE (remote_pipe_number) = _rmt_rexec (remote_host, remote_user);
-  if (READ_SIDE (remote_pipe_number) < 0)
+  int fd = _rmt_rexec (remote_host, remote_user);
+  if (fd < 0)
     {
       free (file_name_copy);
       return -1;
     }
 
-  WRITE_SIDE (remote_pipe_number) = READ_SIDE (remote_pipe_number);
+  from_remote[remote_pipe_number][PREAD] = fd;
+  to_remote[remote_pipe_number][PWRITE] = fd;
 
 #else /* not WITH_REXEC */
   {
@@ -479,7 +485,7 @@ rmt_open (char const *file_name, int open_mode, int bias,
       }
     remote_shell_basename = last_component (remote_shell);
 
-    /* Set up the pipes for the `rsh' command, and fork.  */
+    /* Set up the pipes for the 'rsh' command, and fork.  */
 
     if (pipe (to_remote[remote_pipe_number]) < 0)
       {
@@ -558,7 +564,7 @@ rmt_open (char const *file_name, int open_mode, int bias,
     size_t remote_file_len = strlen (remote_file);
     char *command_buffer = xmalloc (remote_file_len + 1000);
     sprintf (command_buffer, "O%s\n", remote_file);
-    encode_oflag (command_buffer + remote_file_len + 2, open_mode);
+    encode_oflags (command_buffer + remote_file_len + 2, oflags);
     strcat (command_buffer, "\n");
     if (do_command (remote_pipe_number, command_buffer) == -1
 	|| get_status (remote_pipe_number) == -1)
@@ -610,7 +616,7 @@ rmt_read (int handle, char *buffer, idx_t length)
 
   for (idx_t counter = 0; counter < status; )
     {
-      ptrdiff_t rlen = safe_read (READ_SIDE (handle),
+      ptrdiff_t rlen = safe_read (read_side (handle),
 				  buffer + counter, status - counter);
       if (rlen <= 0)
 	{
@@ -636,7 +642,7 @@ rmt_write (int handle, char *buffer, idx_t length)
     return 0;
 
   pipe_handler = signal (SIGPIPE, SIG_IGN);
-  idx_t written = full_write (WRITE_SIDE (handle), buffer, length);
+  idx_t written = full_write (write_side (handle), buffer, length);
   signal (SIGPIPE, pipe_handler);
   if (written == length)
     {
@@ -732,7 +738,7 @@ rmt_ioctl (int handle, unsigned long int operation, void *argument)
 
 	for (char *p = argument; status > 0; )
 	  {
-	    ptrdiff_t rlen = safe_read (READ_SIDE (handle), p, status);
+	    ptrdiff_t rlen = safe_read (read_side (handle), p, status);
 	    if (rlen <= 0)
 	      {
 		_rmt_shutdown (handle, EIO);

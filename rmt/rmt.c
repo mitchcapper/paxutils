@@ -226,7 +226,7 @@ static struct rmt_kw const open_flag_kw[] =
   };
 
 static bool
-decode_open_flag (const char *fstr, int *pflag)
+decode_oflags (const char *fstr, int *pflag)
 {
   fstr = skip_ws (fstr);
 
@@ -343,21 +343,19 @@ static void
 open_device (char *str)
 {
   char *device = xstrdup (str);
-  char *flag_str;
-  int flag;
-
-  flag_str = rmt_read ();
-  if (!flag_str)
+  char *oflags_str = rmt_read ();
+  if (!oflags_str)
     {
       DEBUG (1, "unexpected EOF");
       exit (EXIT_FAILURE);
     }
-  if (decode_open_flag (flag_str, &flag))
+  int oflags;
+  if (decode_oflags (oflags_str, &oflags))
     {
       if (device_fd >= 0)
 	close (device_fd);
 
-      device_fd = open (device, flag, MODE_RW);
+      device_fd = open (device, oflags, MODE_RW);
       if (device_fd < 0)
 	rmt_error (errno);
       else
