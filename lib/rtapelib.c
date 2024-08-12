@@ -632,7 +632,7 @@ rmt_close (int handle)
 ptrdiff_t
 rmt_read (int handle, char *buffer, idx_t length)
 {
-  char command_buffer[sizeof "R\n" + INT_STRLEN_BOUND (size_t)];
+  char command_buffer[sizeof "R\n" + INT_STRLEN_BOUND (idx_t)];
   sprintf (command_buffer, "R%jd\n", length);
   int done = do_command (handle, command_buffer);
   if (done < 0)
