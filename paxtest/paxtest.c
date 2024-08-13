@@ -43,7 +43,7 @@ fatal_exit (void)
 }
 
 void
-dump (char *buf, size_t size)
+dump (char *buf, idx_t size)
 {
   while (size)
     {
@@ -62,7 +62,7 @@ void
 read_and_dump (paxbuf_t pbuf)
 {
   union block block;
-  size_t size;
+  idx_t size;
   pax_io_status_t rc;
 
   while ((rc = paxbuf_read (pbuf, block.buffer, sizeof block, &size))
