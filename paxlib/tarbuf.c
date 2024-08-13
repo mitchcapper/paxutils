@@ -39,31 +39,21 @@ tar_archive_t;
 /* Operations on local files */
 
 static pax_io_status_t
-local_reader (void *closure, void *data, size_t size, size_t *ret_size)
+local_reader (void *closure, void *data, idx_t size, idx_t *ret_size)
 {
   tar_archive_t *tar = closure;
-  ssize_t s;
-
-  s = read (tar->fd, data, size);
-  if (s == -1)
-    return pax_io_failure;
-  if (s == 0)
-    return pax_io_eof;
-  *ret_size = s;
-  return pax_io_success;
+  ssize_t s = read (tar->fd, data, size);
+  *ret_size = s + (s < 0);
+  return s < 0 ? pax_io_failure : s == 0 ? pax_io_eof : pax_io_success;
 }
 
 static pax_io_status_t
-local_writer (void *closure, void *data, size_t size, size_t *ret_size)
+local_writer (void *closure, void *data, idx_t size, idx_t *ret_size)
 {
   tar_archive_t *tar = closure;
-  ssize_t s;
-
-  s = write (tar->fd, data, size);
-  if (s == -1)
-    return pax_io_failure;
-  *ret_size = s;
-  return pax_io_success;
+  ssize_t s = write (tar->fd, data, size);
+  *ret_size = s + (s < 0);
+  return s < 0 ? pax_io_failure : pax_io_success;
 }
 
 static int
@@ -102,29 +92,21 @@ local_close (void *closure, int mode)
 
 /* Operations on remote files */
 static pax_io_status_t
-remote_reader (void *closure, void *data, size_t size, size_t *ret_size)
+remote_reader (void *closure, void *data, idx_t size, idx_t *ret_size)
 {
   tar_archive_t *tar = closure;
   ptrdiff_t s = rmt_read (tar->fd, data, size);
-  if (s < 0)
-    return pax_io_failure;
-  if (s == 0)
-    return pax_io_eof;
-  *ret_size = s;
-  return pax_io_success;
+  *ret_size = s + (s < 0);
+  return s < 0 ? pax_io_failure : s == 0 ? pax_io_eof : pax_io_success;
 }
 
 static pax_io_status_t
-remote_writer (void *closure, void *data, size_t size, size_t *ret_size)
+remote_writer (void *closure, void *data, idx_t size, idx_t *ret_size)
 {
   tar_archive_t *tar = closure;
-  size_t s;
-
-  s = rmt_write (tar->fd, data, size);
-  if (s == SAFE_WRITE_ERROR)
-    return pax_io_failure;
+  idx_t s = rmt_write (tar->fd, data, size);
   *ret_size = s;
-  return pax_io_success;
+  return s == 0 ? pax_io_failure : pax_io_success;
 }
 
 static int

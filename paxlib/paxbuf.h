@@ -33,8 +33,8 @@ pax_io_status_t;
 #define PAXBUF_CREAT 0x4
 
 typedef pax_io_status_t (*paxbuf_io_fp) (void *closure,
-					 void *data, size_t size,
-					 size_t *ret_size);
+					 void *data, idx_t size,
+					 idx_t *ret_size);
 typedef int (*paxbuf_seek_fp) (void *closure, off_t offset);
 typedef int (*paxbuf_term_fp) (void *closure, int mode);
 typedef int (*paxbuf_destroy_fp) (void *closure);
@@ -52,14 +52,13 @@ void paxbuf_set_term (paxbuf_t buf,
 void paxbuf_set_wrapper (paxbuf_t buf, paxbuf_wrapper_fp wrap);
 void paxbuf_set_error (paxbuf_t buf, paxbuf_error_fp err);
 
-pax_io_status_t paxbuf_read (paxbuf_t pbuf, char *buf, size_t size,
-			     size_t *rsize);
-pax_io_status_t paxbuf_write (paxbuf_t pbuf, char *buf, size_t size,
-			      size_t *rsize);
+pax_io_status_t paxbuf_read (paxbuf_t pbuf, char *buf, idx_t size,
+			     idx_t *rsize);
+pax_io_status_t paxbuf_write (paxbuf_t pbuf, char *buf, idx_t size,
+			      idx_t *rsize);
 int paxbuf_seek (paxbuf_t buf, off_t offset);
 
 void paxbuf_destroy (paxbuf_t *buf);
 
 void *paxbuf_get_data (paxbuf_t buf);
 int paxbuf_get_mode (paxbuf_t buf);
-

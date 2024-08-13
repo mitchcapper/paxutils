@@ -65,16 +65,18 @@ noinit (const char *name)
 }
 
 static pax_io_status_t
-default_reader (void *closure, void *data, size_t size, size_t *ret_size)
+default_reader (void *closure, void *data, idx_t size, idx_t *ret_size)
 {
   noinit ("pax_buffer.reader");
+  *ret_size = 0;
   return pax_io_failure;
 }
 
 static pax_io_status_t
-default_writer (void *closure, void *data, size_t size, size_t *ret_size)
+default_writer (void *closure, void *data, idx_t size, idx_t *ret_size)
 {
   noinit ("pax_buffer.writer");
+  *ret_size = 0;
   return pax_io_failure;
 }
 
@@ -199,7 +201,7 @@ fill_buffer (paxbuf_t buf)
   buf->record_level = 0;
   do
     {
-      size_t s = 0;
+      idx_t s = 0;
 
       status = buf->reader (buf->closure, buf->record + buf->record_level,
 			    buf->record_size - buf->record_level, &s);
@@ -222,7 +224,7 @@ flush_buffer (paxbuf_t buf)
   buf->record_level = 0;
   do
     {
-      size_t s = 0;
+      idx_t s = 0;
       status = buf->writer (buf->closure, buf->record + buf->record_level,
 			    buf->record_size - buf->record_level, &s);
       buf->record_level += s;
@@ -236,58 +238,56 @@ flush_buffer (paxbuf_t buf)
 }
 
 pax_io_status_t
-paxbuf_read (paxbuf_t buf, char *data, size_t size, size_t *rsize)
+paxbuf_read (paxbuf_t buf, char *data, idx_t size, idx_t *rsize)
 {
   pax_io_status_t status = pax_io_success;
+  idx_t nread = 0;
 
-  *rsize = 0;
   while (size && status == pax_io_success)
     {
-      size_t s;
-
       if (buf->pos == buf->record_level)
 	{
 	  status = fill_buffer (buf);
 	  if (status == pax_io_failure)
 	    break;
 	}
-      s = buf->record_level - buf->pos;
+      idx_t s = buf->record_level - buf->pos;
       if (s > size)
 	s = size;
       memcpy (data, buf->record + buf->pos, s);
       data += s;
       buf->pos += s;
       size -= s;
-      *rsize += s;
+      nread += s;
     }
+  *rsize = nread;
   return status;
 }
 
 pax_io_status_t
-paxbuf_write (paxbuf_t buf, char *data, size_t size, size_t *wsize)
+paxbuf_write (paxbuf_t buf, char *data, idx_t size, idx_t *wsize)
 {
   pax_io_status_t status = pax_io_success;
+  idx_t nwritten = 0;
 
-  *wsize = 0;
   while (size && status == pax_io_success)
     {
-      size_t s;
-
       if (buf->pos == buf->record_size)
 	{
 	  status = flush_buffer (buf);
 	  if (status == pax_io_failure)
 	    break;
 	}
-      s = buf->record_size - buf->pos;
+      idx_t s = buf->record_size - buf->pos;
       if (s > size)
 	s = size;
       memcpy (buf->record + buf->pos, data, s);
       data += s;
       buf->pos += s;
       size -= s;
-      *wsize += s;
+      nwritten += s;
     }
+  *wsize = nwritten;
   return status;
 }
 
