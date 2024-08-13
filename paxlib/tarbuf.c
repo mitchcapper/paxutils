@@ -135,9 +135,9 @@ static int
 remote_close (void *closure, int mode)
 {
   tar_archive_t *tar = closure;
-  int rc = rmt_close (tar->fd);
+  int fd = tar->fd;
   tar->fd = -1;
-  return rc;
+  return rmt_close (fd);
 }
 
 
