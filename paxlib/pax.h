@@ -55,8 +55,8 @@ struct tar_stat_info
 int rmt_open (const char *file_name, int open_mode, int bias,
 	      const char *remote_shell, const char *rmt_command);
 int rmt_close (int handle);
-size_t rmt_read (int handle, char *buffer, size_t length);
-size_t rmt_write (int handle, char *buffer, size_t length);
+ptrdiff_t rmt_read (int handle, char *buffer, idx_t length);
+idx_t rmt_write (int handle, char *buffer, idx_t length);
 off_t rmt_lseek (int handle, off_t offset, int whence);
 int rmt_ioctl (int handle, unsigned long int operation, char *argument);
 
