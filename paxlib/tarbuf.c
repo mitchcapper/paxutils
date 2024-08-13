@@ -29,7 +29,7 @@ typedef struct tar_archive
 {
   char *filename;           /* Name of the archive file */
   int fd;                   /* Archive file descriptor */
-  int bfactor;              /* Number of blocks in a record */
+  idx_t bfactor;	    /* Number of blocks in a record */
   const char *rsh;          /* Full pathname of rsh */
   const char *rmt;          /* Full pathname of the remote command */
 }
@@ -158,7 +158,7 @@ tar_wrapper (void *closure)
 
 void
 tar_archive_create (paxbuf_t *pbuf, const char *filename,
-		    int remote, int mode, size_t bfactor)
+		    int remote, int mode, idx_t bfactor)
 {
   tar_archive_t *tar;
 

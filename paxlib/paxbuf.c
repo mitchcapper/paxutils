@@ -25,14 +25,15 @@
 #include <errno.h>
 #include <gettext.h>
 #include <system.h>
+#include <ialloc.h>
 #include <paxbuf.h>
 
 /* PAX buffer structure */
 struct pax_buffer
 {
-  size_t record_size;         /* Size of a record, bytes */
-  size_t record_level;        /* Number of bytes stored in the record */
-  size_t pos;                 /* Current position in buffer */
+  idx_t record_size;	      /* Size of a record, bytes */
+  idx_t record_level;	      /* Number of bytes stored in the record */
+  idx_t pos;		      /* Current position in buffer */
   char  *record;              /* Record buffer, record_size bytes long */
 
   int status;                 /* Return code from the latest I/O */
@@ -127,14 +128,14 @@ default_error (void *closure)
 /* 1. Initialize/destroy */
 
 int
-paxbuf_create (paxbuf_t *pbuf, int mode, void *closure, size_t record_size)
+paxbuf_create (paxbuf_t *pbuf, int mode, void *closure, idx_t record_size)
 {
   paxbuf_t buf;
 
   buf = malloc (sizeof *buf);
   if (!buf)
     return ENOMEM;
-  buf->record = malloc (record_size);
+  buf->record = imalloc (record_size);
   if (!buf->record)
     {
       free (buf);

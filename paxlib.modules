@@ -15,6 +15,7 @@ getline
 getopt-gnu
 gettext-h
 hash
+ialloc
 iconv
 limits-h
 lstat

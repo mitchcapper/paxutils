@@ -63,6 +63,6 @@ int rmt_ioctl (int handle, unsigned long int operation, char *argument);
 
 /* Tar-specific functions */
 void tar_archive_create (paxbuf_t *pbuf, const char *filename,
-  		         int remote, int mode, size_t bfactor);
+			 int remote, int mode, idx_t bfactor);
 void tar_set_rmt (paxbuf_t pbuf, const char *rmt);
 void tar_set_rsh (paxbuf_t pbuf, const char *rsh);

@@ -41,7 +41,7 @@ typedef int (*paxbuf_destroy_fp) (void *closure);
 typedef int (*paxbuf_wrapper_fp) (void *closure);
 typedef const char * (*paxbuf_error_fp) (void *closure);
 
-int paxbuf_create (paxbuf_t *buf, int mode, void *closure, size_t record_size);
+int paxbuf_create (paxbuf_t *buf, int mode, void *closure, idx_t record_size);
 int paxbuf_open (paxbuf_t buf);
 int paxbuf_close (paxbuf_t buf);
 void paxbuf_set_io (paxbuf_t buf, paxbuf_io_fp rd, paxbuf_io_fp wr,
