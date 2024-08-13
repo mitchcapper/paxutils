@@ -100,7 +100,7 @@ safer_name_suffix (char const *file_name, bool link_target,
       /* Skip file system prefixes, leading file name components that contain
 	 "..", and leading slashes.  */
 
-      size_t prefix_len = FILE_SYSTEM_PREFIX_LEN (file_name);
+      idx_t prefix_len = FILE_SYSTEM_PREFIX_LEN (file_name);
 
       for (p = file_name + prefix_len; *p; )
 	{
