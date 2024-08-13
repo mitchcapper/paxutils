@@ -43,10 +43,10 @@ struct tar_stat_info
 
   bool   is_sparse;         /* Is the file sparse */
 
-  size_t sparse_map_avail;  /* Index to the first unused element in
+  idx_t sparse_map_avail;   /* Index to the first unused element in
 			       sparse_map array. Zero if the file is
 			       not sparse */
-  size_t sparse_map_size;   /* Size of the sparse map */
+  idx_t sparse_map_size;   /* Size of the sparse map */
   struct sp_array *sparse_map;
 };
 
