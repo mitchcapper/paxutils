@@ -174,25 +174,27 @@ read_error (char const *name)
 }
 
 void
-read_error_details (char const *name, off_t offset, size_t size)
+read_error_details (char const *name, off_t offset, idx_t size)
 {
   intmax_t off = offset;
   int e = errno;
   ERROR ((0, e,
-	  ngettext ("%s: Read error at byte %jd, while reading %zu byte",
-		    "%s: Read error at byte %jd, while reading %zu bytes",
+	  ngettext ("%s: Read error at byte %jd, while reading %td byte",
+		    "%s: Read error at byte %jd, while reading %td bytes",
 		    size),
 	  quotearg_colon (name), off, size));
 }
 
 void
-read_warn_details (char const *name, off_t offset, size_t size)
+read_warn_details (char const *name, off_t offset, idx_t size)
 {
   intmax_t off = offset;
   int e = errno;
   WARN ((0, e,
-	 ngettext ("%s: Warning: Read error at byte %jd, while reading %zu byte",
-		   "%s: Warning: Read error at byte %jd, while reading %zu bytes",
+	 ngettext (("%s: Warning: Read error at byte %jd,"
+		    " while reading %td byte"),
+		   ("%s: Warning: Read error at byte %jd,"
+		    " while reading %td bytes"),
 		   size),
 	 quotearg_colon (name), off, size));
 }
@@ -204,13 +206,13 @@ read_fatal (char const *name)
 }
 
 void
-read_fatal_details (char const *name, off_t offset, size_t size)
+read_fatal_details (char const *name, off_t offset, idx_t size)
 {
   intmax_t off = offset;
   int e = errno;
   FATAL_ERROR ((0, e,
-		ngettext ("%s: Read error at byte %jd, while reading %zu byte",
-			  "%s: Read error at byte %jd, while reading %zu bytes",
+		ngettext ("%s: Read error at byte %jd, while reading %td byte",
+			  "%s: Read error at byte %jd, while reading %td bytes",
 			  size),
 		quotearg_colon (name), off, size));
 }
@@ -337,14 +339,14 @@ write_error (char const *name)
 }
 
 void
-write_error_details (char const *name, size_t status, size_t size)
+write_error_details (char const *name, idx_t status, idx_t size)
 {
   if (status == 0)
     write_error (name);
   else
     ERROR ((0, 0,
-	    ngettext ("%s: Wrote only %zu of %zu byte",
-		      "%s: Wrote only %zu of %zu bytes",
+	    ngettext ("%s: Wrote only %td of %td byte",
+		      "%s: Wrote only %td of %td bytes",
 		      size),
 	    name, status, size));
 }
