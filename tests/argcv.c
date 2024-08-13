@@ -127,7 +127,7 @@ argcv_escape_char (int c)
 
 
 static int
-xtonum (const char *src, int base, size_t cnt)
+xtonum (const char *src, int base, idx_t cnt)
 {
   char *p;
   char tmp[4]; /* At most three characters + zero */
@@ -139,10 +139,10 @@ xtonum (const char *src, int base, size_t cnt)
   return p == tmp + cnt ? val : -1;
 }
 
-static size_t
+static idx_t
 escaped_length (const char *str, bool *quote)
 {
-  size_t len = 0;
+  idx_t len = 0;
 
   for (; *str; str++)
     {
@@ -167,7 +167,7 @@ escaped_length (const char *str, bool *quote)
 }
 
 static void
-unescape_copy (char *dst, const char *src, size_t n)
+unescape_copy (char *dst, const char *src, idx_t n)
 {
   int c;
 
@@ -334,30 +334,26 @@ argcv_free (int argc, char **argv)
 int
 argcv_string (int argc, char **argv, char **pstring)
 {
-  size_t i, j, len;
-  char *buffer;
-
   /* No need.  */
   if (!pstring)
     return 1;
 
-  buffer = malloc (1);
+  char *buffer = malloc (1);
   if (!buffer)
     return 1;
   *buffer = '\0';
 
-  for (len = i = j = 0; i < argc; i++)
+  idx_t j = 0, len = 0;
+  for (int i = 0; i < argc; i++)
     {
       bool quote = false;
-      int toklen;
-
-      toklen = escaped_length (argv[i], &quote);
+      idx_t toklen = escaped_length (argv[i], &quote);
 
       len += toklen + 2;
       if (quote)
 	len += 2;
 
-      buffer = realloc (buffer, len);
+      buffer = irealloc (buffer, len);
       if (!buffer)
         return 1;
 
@@ -385,16 +381,16 @@ char *command = "set prompt=\"& \a\\\"\" \\x25\\0145\\098\\ta";
 int
 main (int xargc, char **xargv)
 {
-  int i, argc;
+  int argc;
   char **argv;
   char *s;
 
   argcv_get (xargv[1] ? xargv[1]:command, "=", "#", &argc, &argv);
   printf ("%d args:\n", argc);
-  for (i = 0; i < argc; i++)
-    printf ("%s\n", argv[i]);
-  printf ("===\n");
+  for (int i = 0; i < argc; i++)
+    puts (argv[i]);
+  puts ("===");
   argcv_string (argc, argv, &s);
-  printf ("%s\n", s);
+  puts (s);
 }
 #endif
