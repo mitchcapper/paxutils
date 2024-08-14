@@ -34,7 +34,7 @@ static long int dbglev;
 static FILE *dbgout;
 
 #define DEBUG(lev,msg)						\
-  do { if (dbgout && (lev) <= dbglev) fprintf (dbgout, "%s", msg); } \
+  do { if (dbgout && (lev) <= dbglev) fputs (msg, dbgout); }		\
   while (false)
 #define DEBUG1(lev, fmt, x)						\
   do { if (dbgout && (lev) <= dbglev) fprintf (dbgout, fmt, x); } while (false)
@@ -53,7 +53,7 @@ static FILE *dbgout;
 	{					\
           va_list aptr;                         \
           va_start (aptr, fmt);                 \
-	  fprintf (dbgout, "%s", pfx);		\
+	  fputs (pfx, dbgout);			\
 	  vfprintf (dbgout, fmt, aptr);		\
           va_end (aptr);                        \
 	}					\
