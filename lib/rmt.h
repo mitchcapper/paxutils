@@ -18,16 +18,20 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 extern char const *rmt_command;
-extern char const *rmt_dev_name__;
 
 int rmt_open__ (const char *, int, int, const char *);
 int rmt_close__ (int);
-ptrdiff_t rmt_read__ (int, char *, idx_t);
-idx_t rmt_write__ (int, char *, idx_t);
+ptrdiff_t rmt_read__ (int, void *, idx_t);
+idx_t rmt_write__ (int, void const *, idx_t);
 off_t rmt_lseek__ (int, off_t, int);
 int rmt_ioctl__ (int, unsigned long int, void *);
 
 extern bool force_local_option;
+
+_GL_INLINE_HEADER_BEGIN
+#ifndef RMT_INLINE
+# define RMT_INLINE _GL_INLINE
+#endif
 
 /* A filename is remote if it contains a colon not preceded by a slash,
    to take care of `/:/' which is a shorthand for `/.../<CELL-NAME>/fs'
@@ -35,61 +39,75 @@ extern bool force_local_option;
    Distributed File System (DFS).  However, when --force-local, a
    filename is never remote.  */
 
-#define _remdev(dev_name) \
-  (!force_local_option && (rmt_dev_name__ = strchr (dev_name, ':')) \
-   && rmt_dev_name__ > (dev_name) \
-   && ! memchr (dev_name, '/', rmt_dev_name__ - (dev_name)))
+RMT_INLINE bool
+_remdev (char const *__dev_name)
+{
+  if (force_local_option || *__dev_name == ':')
+    return false;
+  for (char const *__p = __dev_name; *__p & (*__p != '/'); __p++)
+    if (*__p == ':')
+      return true;
+  return false;
+}
 
-#define _isrmt(fd) \
-  ((fd) >= __REM_BIAS)
+enum { __REM_BIAS = 1 << 30 };
 
-#define __REM_BIAS (1 << 30)
+RMT_INLINE bool
+_isrmt (int __fd)
+{
+  return __REM_BIAS <= __fd;
+}
 
-#define rmtopen(dev_name, oflag, mode, command) \
-  (_remdev (dev_name) ? rmt_open__ (dev_name, oflag, __REM_BIAS, command) \
-   : open (dev_name, oflag, mode))
+RMT_INLINE int
+rmtopen (char const *__name, int __flags, mode_t __mode, char const *__command)
+{
+  return (_remdev (__name)
+	  ? rmt_open__ (__name, __flags, __REM_BIAS, __command)
+	  : open (__name, __flags, __mode));
+}
 
-#define rmtaccess(dev_name, amode) \
-  (_remdev (dev_name) ? 0 : access (dev_name, amode))
+RMT_INLINE int
+rmtcreat (char const *__name, mode_t __mode, char const *__command)
+{
+  return rmtopen (__name, O_CREAT | O_WRONLY, __mode, __command);
+}
 
-#define rmtstat(dev_name, buffer) \
-  (_remdev (dev_name) ? (errno = EOPNOTSUPP), -1 : stat (dev_name, buffer))
+RMT_INLINE ptrdiff_t
+rmtread (int __fd, void *__buffer, idx_t __length)
+{
+  return (_isrmt (__fd)
+	  ? rmt_read__ (__fd - __REM_BIAS, __buffer, __length)
+	  : safe_read (__fd, __buffer, __length));
+}
 
-#define rmtcreat(dev_name, mode, command) \
-   (_remdev (dev_name) \
-    ? rmt_open__ (dev_name, O_CREAT | O_WRONLY, __REM_BIAS, command) \
-    : creat (dev_name, mode))
+RMT_INLINE idx_t
+rmtwrite (int __fd, void const *__buffer, idx_t __length)
+{
+  return (_isrmt (__fd)
+	  ? rmt_write__ (__fd - __REM_BIAS, __buffer, __length)
+	  : full_write (__fd, __buffer, __length));
+}
 
-#define rmtlstat(dev_name, muffer) \
-  (_remdev (dev_name) ? (errno = EOPNOTSUPP), -1 : lstat (dev_name, buffer))
+RMT_INLINE off_t
+rmtlseek (int __fd, off_t __offset, int __whence)
+{
+  return (_isrmt (__fd)
+	  ? rmt_lseek__ (__fd - __REM_BIAS, __offset, __whence)
+	  : lseek (__fd, __offset, __whence));
+}
 
-#define rmtread(fd, buffer, length) \
-  (_isrmt (fd) ? rmt_read__ (fd - __REM_BIAS, buffer, length) \
-   : safe_read (fd, buffer, length))
+RMT_INLINE int
+rmtclose (int __fd)
+{
+  return _isrmt (__fd) ? rmt_close__ (__fd - __REM_BIAS) : close (__fd);
+}
 
-#define rmtwrite(fd, buffer, length) \
-  (_isrmt (fd) ? rmt_write__ (fd - __REM_BIAS, buffer, length) \
-   : full_write (fd, buffer, length))
+RMT_INLINE int
+rmtioctl (int __fd, unsigned long int __request, void *__argument)
+{
+  return (_isrmt (__fd)
+	  ? rmt_ioctl__ (__fd - __REM_BIAS, __request, __argument)
+	  : ioctl (__fd, __request, __argument));
+}
 
-#define rmtlseek(fd, offset, where) \
-  (_isrmt (fd) ? rmt_lseek__ (fd - __REM_BIAS, offset, where) \
-   : lseek (fd, offset, where))
-
-#define rmtclose(fd) \
-  (_isrmt (fd) ? rmt_close__ (fd - __REM_BIAS) : close (fd))
-
-#define rmtioctl(fd, request, argument) \
-  (_isrmt (fd) ? rmt_ioctl__ (fd - __REM_BIAS, request, argument) \
-   : ioctl (fd, request, argument))
-
-#define rmtdup(fd) \
-  (_isrmt (fd) ? (errno = EOPNOTSUPP), -1 : dup (fd))
-
-#define rmtfstat(fd, buffer) \
-  (_isrmt (fd) ? (errno = EOPNOTSUPP), -1 : fstat (fd, buffer))
-
-#define rmtfcntl(cd, command, argument) \
-  (_isrmt (fd) ? (errno = EOPNOTSUPP), -1 : fcntl (fd, command, argument))
-
-#define rmtisatty(fd) \
-  (_isrmt (fd) ? 0 : isatty (fd))
+_GL_INLINE_HEADER_END

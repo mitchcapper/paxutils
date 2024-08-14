@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 
 #include <sys/stat.h>
@@ -138,7 +139,9 @@
 
 #include <dirname.h>
 #include <error.h>
+#include <full-write.h>
 #include <intprops.h>
+#include <safe-read.h>
 #include <savedir.h>
 #include <unlocked-io.h>
 #include <xalloc.h>

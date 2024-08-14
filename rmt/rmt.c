@@ -17,7 +17,6 @@
 #include "system.h"
 
 #if HAVE_SYS_MTIO_H
-# include <sys/ioctl.h>
 # include <sys/mtio.h>
 #endif
 
@@ -25,12 +24,10 @@
 #include <argp.h>
 #include <argp-version-etc.h>
 #include <getopt.h>
-#include <full-write.h>
 #include <configmake.h>
 #include <error.h>
 #include <progname.h>
 #include <c-ctype.h>
-#include <safe-read.h>
 
 
 static long int dbglev;

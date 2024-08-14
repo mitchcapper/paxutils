@@ -33,14 +33,11 @@
 
 #include "system.h"
 
-#include <safe-read.h>
-#include <full-write.h>
 #include <verify.h>
 
 #include <signal.h>
 
 #if HAVE_SYS_MTIO_H
-# include <sys/ioctl.h>
 # include <sys/mtio.h>
 #endif
 
@@ -84,13 +81,11 @@ write_side (int handle)
 #ifdef PAXLIB_RTAPE
 # include <localedir.h> /* for DEFAULT_RMT_COMMAND */
 #else
+# define RMT_INLINE _GL_EXTERN_INLINE
 # include <rmt.h>
 # include <rmt-command.h>
 
 char const *rmt_command = DEFAULT_RMT_COMMAND;
-
-/* Temporary variable used by macros in rmt.h.  */
-char const *rmt_dev_name__;
 
 /* If true, always consider file names to be local, even if they contain
    colons */
@@ -633,7 +628,7 @@ rmt_close (int handle)
 /* Read from remote tape connection HANDLE into BUFFER, of size LENGTH.
    Return the number of bytes read on success, -1 (setting errno) on error.  */
 ptrdiff_t
-rmt_read (int handle, char *buffer, idx_t length)
+rmt_read (int handle, void *buffer, idx_t length)
 {
   char command_buffer[sizeof "R\n" + INT_STRLEN_BOUND (idx_t)];
   int done = do_command (handle, command_buffer,
@@ -648,10 +643,11 @@ rmt_read (int handle, char *buffer, idx_t length)
       return -1;
     }
 
+  char *buf = buffer;
   for (idx_t counter = 0; counter < status; )
     {
       ptrdiff_t rlen = safe_read (read_side (handle),
-				  buffer + counter, status - counter);
+				  buf + counter, status - counter);
       if (rlen <= 0)
 	{
 	  _rmt_shutdown (handle, EIO);
@@ -666,7 +662,7 @@ rmt_read (int handle, char *buffer, idx_t length)
 /* Write LENGTH bytes from BUFFER to remote tape connection HANDLE.
    Return the number of bytes written.  */
 idx_t
-rmt_write (int handle, char *buffer, idx_t length)
+rmt_write (int handle, void const *buffer, idx_t length)
 {
   char command_buffer[sizeof "W\n" + INT_STRLEN_BOUND (idx_t)];
   void (*pipe_handler) (int);
