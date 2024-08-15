@@ -20,8 +20,11 @@
 # include <config.h>
 #endif
 
-#include <c-ctype.h>
 #include <argcv.h>
+
+#include <ialloc.h>
+#include <c-ctype.h>
+#include <idx.h>
 
 /*
  * takes a string and splits it into several strings, breaking at ' '
