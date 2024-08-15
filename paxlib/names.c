@@ -131,7 +131,7 @@ safer_name_suffix (char const *file_name, bool link_target,
 		N_("Removing leading `%s' from member names"),
 		N_("Removing leading `%s' from hard link targets")
 	      };
-	      WARN ((0, 0, _(diagnostic[link_target]), prefix));
+	      paxwarn (0, _(diagnostic[link_target]), prefix);
 	    }
 	}
     }
@@ -145,7 +145,7 @@ safer_name_suffix (char const *file_name, bool link_target,
 	    N_("Substituting `.' for empty member name"),
 	    N_("Substituting `.' for empty hard link target")
 	  };
-	  WARN ((0, 0, "%s", _(diagnostic[link_target])));
+	  paxwarn (0, "%s", _(diagnostic[link_target]));
 	}
 
       p = ".";

@@ -30,44 +30,31 @@
 #define PAXEXIT_DIFFERS 1
 #define PAXEXIT_FAILURE 2
 
+/* The invoking can assign to this variable.  */
 extern void (*error_hook) (void);
 
-/* Both WARN and ERROR write a message on stderr and continue processing,
-   however ERROR manages so tar will exit unsuccessfully.  FATAL_ERROR
-   writes a message on stderr and aborts immediately, with another message
-   line telling so.  USAGE_ERROR works like FATAL_ERROR except that the
-   other message line suggests trying --help.  All four macros accept a
-   single argument of the form ((0, errno, _("FORMAT"), Args...)).  errno
-   is zero when the error is not being detected by the system.  */
+/* The invoking code must define this function.  It takes an exit
+   status, outputs a usage message, then exits with that status.  */
+_Noreturn void usage (int);
 
-#define WARN(Args) \
-  do { if (error_hook) error_hook (); error Args; } while (false)
-#define ERROR(Args) \
-  do						\
-    {						\
-      if (error_hook) error_hook ();		\
-      error Args;				\
-      exit_status = PAXEXIT_FAILURE;		\
-    }						\
-  while (false)
-#define FATAL_ERROR(Args) \
-  do						\
-    {						\
-      if (error_hook) error_hook ();		\
-      error Args;				\
-      fatal_exit ();				\
-    }						\
-  while (false)
-#define USAGE_ERROR(Args) \
-  do						\
-    {						\
-      if (error_hook) error_hook ();		\
-      error Args;				\
-      usage (PAXEXIT_FAILURE);			\
-    }						\
-  while (false)
-
+/* The invoking code can optionally define this variable.
+   It defaults to a variable initialized to PAXEXIT_SUCCESS.  */
 extern int exit_status;
+
+/* Functions for issuing diagnostics.
+   They all invoke 'error_hook' first, if it is a non-null function pointer.
+   They all accept an errno value, a printf format, and extra arguments
+   to fill out the format, and output a diagnostic to stderr;
+   a nonzero errno value also outputs the corresponding strerror string.
+   paxwarn continues processing and does not affect the exit status.
+   paxerror continues processing, but arranges for unsuccessful exit later.
+   paxfatal exits unsuccessfully right away.
+   paxusage is like paxfatal, except it suggests --help too.  */
+
+void paxwarn (int, char const *, ...);
+void paxerror (int, char const *, ...);
+_Noreturn void paxfatal (int, char const *, ...);
+_Noreturn void paxusage (int, char const *, ...);
 
 void pax_decode_mode (mode_t mode, char *string);
 void call_arg_error (char const *call, char const *name);

@@ -23,6 +23,53 @@
 
 void (*error_hook) (void);
 
+void
+paxwarn (int errnum, char const *format, ...)
+{
+  if (error_hook)
+    error_hook ();
+  va_list ap;
+  va_start (ap, format);
+  verror (0, errnum, format, ap);
+  va_end (ap);
+}
+
+void
+paxerror (int errnum, char const *format, ...)
+{
+  if (error_hook)
+    error_hook ();
+  va_list ap;
+  va_start (ap, format);
+  verror (0, errnum, format, ap);
+  va_end (ap);
+  exit_status = PAXEXIT_FAILURE;
+}
+
+void
+paxfatal (int errnum, char const *format, ...)
+{
+  if (error_hook)
+    error_hook ();
+  va_list ap;
+  va_start (ap, format);
+  verror (0, errnum, format, ap);
+  va_end (ap);
+  fatal_exit ();
+}
+
+void
+paxusage (int errnum, char const *format, ...)
+{
+  if (error_hook)
+    error_hook ();
+  va_list ap;
+  va_start (ap, format);
+  verror (0, errnum, format, ap);
+  va_end (ap);
+  usage (PAXEXIT_FAILURE);
+}
+
 /* Decode MODE from its binary form in a stat structure, and encode it
    into a 9-byte string STRING, terminated with a NUL.  */
 
@@ -57,7 +104,7 @@ call_arg_error (char const *call, char const *name)
      Directly translating this to another language will not work, first because
      %s itself is not translated.
      Translate it as `%s: Function %s failed'. */
-  ERROR ((0, e, _("%s: Cannot %s"), quotearg_colon (name), call));
+  paxerror (e, _("%s: Cannot %s"), quotearg_colon (name), call);
 }
 
 /* Report a fatal error associated with the system call CALL and
@@ -70,7 +117,7 @@ call_arg_fatal (char const *call, char const *name)
      Directly translating this to another language will not work, first because
      %s itself is not translated.
      Translate it as `%s: Function %s failed'. */
-  FATAL_ERROR ((0, e, _("%s: Cannot %s"), quotearg_colon (name),  call));
+  paxfatal (e, _("%s: Cannot %s"), quotearg_colon (name),  call);
 }
 
 /* Report a warning associated with the system call CALL and
@@ -83,7 +130,7 @@ call_arg_warn (char const *call, char const *name)
      Directly translating this to another language will not work, first because
      %s itself is not translated.
      Translate it as `%s: Function %s failed'. */
-  WARN ((0, e, _("%s: Warning: Cannot %s"), quotearg_colon (name), call));
+  paxwarn (e, _("%s: Warning: Cannot %s"), quotearg_colon (name), call);
 }
 
 void
@@ -92,8 +139,7 @@ chmod_error_details (char const *name, mode_t mode)
   int e = errno;
   char buf[10];
   pax_decode_mode (mode, buf);
-  ERROR ((0, e, _("%s: Cannot change mode to %s"),
-	  quotearg_colon (name), buf));
+  paxerror (e, _("%s: Cannot change mode to %s"), quotearg_colon (name), buf);
 }
 
 void
@@ -101,8 +147,8 @@ chown_error_details (char const *name, uid_t uid, gid_t gid)
 {
   uintmax_t u = uid, g = gid;
   int e = errno;
-  ERROR ((0, e, _("%s: Cannot change ownership to uid %ju, gid %ju"),
-	  quotearg_colon (name), u, g));
+  paxerror (e, _("%s: Cannot change ownership to uid %ju, gid %ju"),
+	    quotearg_colon (name), u, g);
 }
 
 void
@@ -127,8 +173,8 @@ void
 link_error (char const *target, char const *source)
 {
   int e = errno;
-  ERROR ((0, e, _("%s: Cannot hard link to %s"),
-	  quotearg_colon (source), quote_n (1, target)));
+  paxerror (e, _("%s: Cannot hard link to %s"),
+	    quotearg_colon (source), quote_n (1, target));
 }
 
 void
@@ -178,11 +224,11 @@ read_error_details (char const *name, off_t offset, idx_t size)
 {
   intmax_t off = offset;
   int e = errno;
-  ERROR ((0, e,
-	  ngettext ("%s: Read error at byte %jd, while reading %td byte",
-		    "%s: Read error at byte %jd, while reading %td bytes",
-		    size),
-	  quotearg_colon (name), off, size));
+  paxerror (e,
+	    ngettext ("%s: Read error at byte %jd, while reading %td byte",
+		      "%s: Read error at byte %jd, while reading %td bytes",
+		      size),
+	    quotearg_colon (name), off, size);
 }
 
 void
@@ -190,13 +236,13 @@ read_warn_details (char const *name, off_t offset, idx_t size)
 {
   intmax_t off = offset;
   int e = errno;
-  WARN ((0, e,
-	 ngettext (("%s: Warning: Read error at byte %jd,"
-		    " while reading %td byte"),
-		   ("%s: Warning: Read error at byte %jd,"
-		    " while reading %td bytes"),
-		   size),
-	 quotearg_colon (name), off, size));
+  paxwarn (e,
+	   ngettext (("%s: Warning: Read error at byte %jd,"
+		      " while reading %td byte"),
+		     ("%s: Warning: Read error at byte %jd,"
+		      " while reading %td bytes"),
+		     size),
+	   quotearg_colon (name), off, size);
 }
 
 void
@@ -210,11 +256,11 @@ read_fatal_details (char const *name, off_t offset, idx_t size)
 {
   intmax_t off = offset;
   int e = errno;
-  FATAL_ERROR ((0, e,
-		ngettext ("%s: Read error at byte %jd, while reading %td byte",
-			  "%s: Read error at byte %jd, while reading %td bytes",
-			  size),
-		quotearg_colon (name), off, size));
+  paxfatal (e,
+	    ngettext ("%s: Read error at byte %jd, while reading %td byte",
+		      "%s: Read error at byte %jd, while reading %td bytes",
+		      size),
+	    quotearg_colon (name), off, size);
 }
 
 void
@@ -258,7 +304,7 @@ seek_error_details (char const *name, off_t offset)
 {
   intmax_t off = offset;
   int e = errno;
-  ERROR ((0, e, _("%s: Cannot seek to %jd"), quotearg_colon (name), off));
+  paxerror (e, _("%s: Cannot seek to %jd"), quotearg_colon (name), off);
 }
 
 void
@@ -272,16 +318,16 @@ seek_warn_details (char const *name, off_t offset)
 {
   intmax_t off = offset;
   int e = errno;
-  WARN ((0, e, _("%s: Warning: Cannot seek to %jd"),
-	 quotearg_colon (name), off));
+  paxwarn (e, _("%s: Warning: Cannot seek to %jd"),
+	   quotearg_colon (name), off);
 }
 
 void
 symlink_error (char const *contents, char const *name)
 {
   int e = errno;
-  ERROR ((0, e, _("%s: Cannot create symlink to %s"),
-	  quotearg_colon (name), quote_n (1, contents)));
+  paxerror (e, _("%s: Cannot create symlink to %s"),
+	    quotearg_colon (name), quote_n (1, contents));
 }
 
 void
@@ -344,11 +390,11 @@ write_error_details (char const *name, idx_t status, idx_t size)
   if (status == 0)
     write_error (name);
   else
-    ERROR ((0, 0,
-	    ngettext ("%s: Wrote only %td of %td byte",
-		      "%s: Wrote only %td of %td bytes",
-		      size),
-	    name, status, size));
+    paxerror (0,
+	      ngettext ("%s: Wrote only %td of %td byte",
+			"%s: Wrote only %td of %td bytes",
+			size),
+	      name, status, size);
 }
 
 void

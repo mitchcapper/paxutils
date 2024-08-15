@@ -36,4 +36,5 @@ sys_stat
 utimensat
 version-etc-fsf
 xalloc
+verror
 year2038-recommended
