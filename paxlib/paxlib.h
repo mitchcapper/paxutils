@@ -58,6 +58,13 @@ _Noreturn void paxfatal (int, char const *, ...)
 _Noreturn void paxusage (int, char const *, ...)
   _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
 
+/* Obsolete macros; callers should switch to paxwarn etc.  */
+#define SHIFT1(arg1, ...) __VA_ARGS__
+#define WARN(args) paxwarn (SHIFT1 args)
+#define ERROR(args) paxerror (SHIFT1 args)
+#define FATAL_ERROR(args) paxfatal (SHIFT1 args)
+#define USAGE_ERROR(args) paxusage (SHIFT1 args)
+
 void pax_decode_mode (mode_t mode, char *string);
 void call_arg_error (char const *call, char const *name);
 _Noreturn void call_arg_fatal (char const *call, char const *name);
