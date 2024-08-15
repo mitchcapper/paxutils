@@ -26,9 +26,7 @@
 /* Exit status for paxutils app.  Let's try to keep this list as simple as
    possible. tar -d option strongly invites a status different for unequal
    comparison and other errors.  */
-#define PAXEXIT_SUCCESS 0
-#define PAXEXIT_DIFFERS 1
-#define PAXEXIT_FAILURE 2
+enum { PAXEXIT_SUCCESS, PAXEXIT_DIFFERS, PAXEXIT_FAILURE };
 
 /* The invoking can assign to this variable.  */
 extern void (*error_hook) (void);
