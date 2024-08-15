@@ -49,10 +49,14 @@ extern int exit_status;
    paxfatal exits unsuccessfully right away.
    paxusage is like paxfatal, except it suggests --help too.  */
 
-void paxwarn (int, char const *, ...);
-void paxerror (int, char const *, ...);
-_Noreturn void paxfatal (int, char const *, ...);
-_Noreturn void paxusage (int, char const *, ...);
+void paxwarn (int, char const *, ...)
+  _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
+void paxerror (int, char const *, ...)
+  _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
+_Noreturn void paxfatal (int, char const *, ...)
+  _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
+_Noreturn void paxusage (int, char const *, ...)
+  _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
 
 void pax_decode_mode (mode_t mode, char *string);
 void call_arg_error (char const *call, char const *name);
