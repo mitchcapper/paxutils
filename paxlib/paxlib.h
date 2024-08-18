@@ -41,13 +41,14 @@ extern int exit_status;
 
 /* Functions for issuing diagnostics.
    They all invoke 'error_hook' first, if it is a non-null function pointer.
-   They all accept an errno value, a printf format, and extra arguments
+   They accept an errno value, a printf format, and extra arguments
    to fill out the format, and output a diagnostic to stderr;
    a nonzero errno value also outputs the corresponding strerror string.
    paxwarn continues processing and does not affect the exit status.
    paxerror continues processing, but arranges for unsuccessful exit later.
    paxfatal exits unsuccessfully right away.
-   paxusage is like paxfatal, except it suggests --help too.  */
+   paxusage is like paxfatal, except it does not take an errno value
+   and suggests --help too.  */
 
 void paxwarn (int, char const *, ...)
   _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
@@ -55,15 +56,16 @@ void paxerror (int, char const *, ...)
   _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
 _Noreturn void paxfatal (int, char const *, ...)
   _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
-_Noreturn void paxusage (int, char const *, ...)
-  _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 2, 3));
+_Noreturn void paxusage (char const *, ...)
+  _GL_ATTRIBUTE_COLD _GL_ATTRIBUTE_FORMAT ((printf, 1, 2));
 
 /* Obsolete macros; callers should switch to paxwarn etc.  */
 #define SHIFT1(arg1, ...) __VA_ARGS__
+#define SHIFT2(arg1, arg2, ...) __VA_ARGS__
 #define WARN(args) paxwarn (SHIFT1 args)
 #define ERROR(args) paxerror (SHIFT1 args)
 #define FATAL_ERROR(args) paxfatal (SHIFT1 args)
-#define USAGE_ERROR(args) paxusage (SHIFT1 args)
+#define USAGE_ERROR(args) paxusage (SHIFT2 args)
 
 void pax_decode_mode (mode_t mode, char *string);
 void call_arg_error (char const *call, char const *name);

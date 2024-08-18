@@ -59,13 +59,13 @@ paxfatal (int errnum, char const *format, ...)
 }
 
 void
-paxusage (int errnum, char const *format, ...)
+paxusage (char const *format, ...)
 {
   if (error_hook)
     error_hook ();
   va_list ap;
   va_start (ap, format);
-  verror (0, errnum, format, ap);
+  verror (0, 0, format, ap);
   va_end (ap);
   usage (PAXEXIT_FAILURE);
 }
