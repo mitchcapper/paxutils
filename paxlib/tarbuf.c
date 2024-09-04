@@ -15,8 +15,7 @@
    Public License for more details.
 
    You should have received a copy of the GNU General Public License along
-   with GNU paxutils; if not, write to the Free Software Foundation, Inc.,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   with GNU paxutils.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <system.h>
 #include <safe-read.h>
