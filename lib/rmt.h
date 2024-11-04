@@ -68,7 +68,7 @@ rmtopen (char const *__name, int __flags, mode_t __mode, char const *__command)
 RMT_INLINE int
 rmtcreat (char const *__name, mode_t __mode, char const *__command)
 {
-  return rmtopen (__name, O_CREAT | O_WRONLY, __mode, __command);
+  return rmtopen (__name, O_CREAT | O_WRONLY | O_TRUNC, __mode, __command);
 }
 
 RMT_INLINE ptrdiff_t
