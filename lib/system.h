@@ -168,7 +168,7 @@
 #if defined(MSDOS) || defined(_WIN32)
 # include <process.h>
 # define SET_BINARY_MODE(arc) setmode(arc, O_BINARY)
-# define mkdir(file, mode) (mkdir) (file)
+//# define mkdir(file, mode) (mkdir) (file)
 # define TTY_NAME "con"
 #else
 # define SET_BINARY_MODE(arc)

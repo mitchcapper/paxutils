@@ -54,7 +54,7 @@ _remdev (char const *__dev_name)
 RMT_INLINE bool
 _remdev (char const *__dev_name)
 {
-  if (force_local_option || *__dev_name == ':' || (strlen(dev_name) > 2 && dev_name[1] == ':') )
+  if (force_local_option || *__dev_name == ':' || (strlen(__dev_name) > 2 && __dev_name[1] == ':') )
     return false;
   for (char const *__p = __dev_name; *__p & (*__p != '/'); __p++)
     if (*__p == ':')
