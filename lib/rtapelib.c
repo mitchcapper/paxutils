@@ -40,7 +40,7 @@
 # include <sys/mtio.h>
 #endif
 
-#if HAVE_NETDB_H
+#if defined(HAVE_NETDB_H) || defined(HAVE_DECL_GAI_STRERROR)
 # include <netdb.h>
 #endif
 
